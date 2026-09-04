@@ -1,0 +1,25 @@
+node_modules/
+.next/
+out/
+build/
+
+# Secrets – niemals committen. .env.example ist die Vorlage und bleibt drin.
+.env
+.env.*
+!.env.example
+
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+tools/extracted/
+.pglite/
+public/pyodide/
+.venv/
+
+# Python-Artefakte (entstehen beim Ausführen von tools/verify_content.py)
+__pycache__/
+*.py[cod]
+
+# Interne Bestandsaufnahme: nennt Namen und Adressen der bisherigen Beteiligten
+# und gehört deshalb nicht in ein (womöglich öffentliches) Repository.
+BESTANDSAUFNAHME.md
