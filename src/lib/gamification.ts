@@ -63,6 +63,26 @@ export function levelInfo(xp: number): LevelInfo {
 }
 
 /* ------------------------------------------------------------------ *
+ *  XP-Abzug für Tipps
+ * ------------------------------------------------------------------ */
+
+/**
+ * Tipps kosten XP – aber gestaffelt statt pauschal.
+ *
+ * Vorher kostete der erste Tipp genauso viel wie der neunte (pauschal 25 %).
+ * Das hat bestraft, wer einmal kurz nachschaut, und niemanden gebremst, der
+ * sich durchreichen lässt. Jetzt kostet jeder Tipp 10 %, gedeckelt bei 50 %:
+ * Hilfe bleibt bezahlbar, aber sie summiert sich spürbar.
+ */
+export const HINT_COST = 0.1;
+export const MAX_HINT_PENALTY = 0.5;
+
+export function xpAfterHints(baseXp: number, hintsUsed: number): number {
+  const penalty = Math.min(MAX_HINT_PENALTY, Math.max(0, hintsUsed) * HINT_COST);
+  return Math.max(2, Math.round(baseXp * (1 - penalty)));
+}
+
+/* ------------------------------------------------------------------ *
  *  Abzeichen
  * ------------------------------------------------------------------ */
 export type BadgeStats = {
@@ -94,6 +114,12 @@ export type BadgeDefinition = {
   /** "secret" wird erst nach dem Freischalten angezeigt */
   secret?: boolean;
   earned: (stats: BadgeStats) => boolean;
+  /**
+   * Woran man ablesen kann, wie weit man ist – z. B. 7 von 10.
+   * Ohne dieses Feld ist das Abzeichen ein reines Ja/Nein (etwa die
+   * Uhrzeit-Abzeichen, bei denen ein Fortschrittsbalken keinen Sinn ergäbe).
+   */
+  goal?: { target: number; current: (stats: BadgeStats) => number; unit: string };
 };
 
 export const BADGES: BadgeDefinition[] = [
@@ -103,6 +129,7 @@ export const BADGES: BadgeDefinition[] = [
     description: "Du hast deine erste Aufgabe gelöst.",
     icon: "🌱",
     earned: (s) => s.solvedSteps >= 1,
+    goal: { target: 1, current: (s) => s.solvedSteps, unit: "Aufgaben" },
   },
   {
     id: "warmgelaufen",
@@ -110,6 +137,7 @@ export const BADGES: BadgeDefinition[] = [
     description: "10 Aufgaben geschafft.",
     icon: "🔥",
     earned: (s) => s.solvedSteps >= 10,
+    goal: { target: 10, current: (s) => s.solvedSteps, unit: "Aufgaben" },
   },
   {
     id: "halbmarathon",
@@ -117,6 +145,7 @@ export const BADGES: BadgeDefinition[] = [
     description: "50 Aufgaben geschafft.",
     icon: "🏃",
     earned: (s) => s.solvedSteps >= 50,
+    goal: { target: 50, current: (s) => s.solvedSteps, unit: "Aufgaben" },
   },
   {
     id: "hundert",
@@ -124,6 +153,7 @@ export const BADGES: BadgeDefinition[] = [
     description: "100 Aufgaben geschafft.",
     icon: "💯",
     earned: (s) => s.solvedSteps >= 100,
+    goal: { target: 100, current: (s) => s.solvedSteps, unit: "Aufgaben" },
   },
   {
     id: "erste-lektion",
@@ -131,6 +161,7 @@ export const BADGES: BadgeDefinition[] = [
     description: "Deine erste Lektion vollständig abgeschlossen.",
     icon: "📗",
     earned: (s) => s.completedLessons >= 1,
+    goal: { target: 1, current: (s) => s.completedLessons, unit: "Lektionen" },
   },
   {
     id: "kapitelmeister",
@@ -138,6 +169,7 @@ export const BADGES: BadgeDefinition[] = [
     description: "Ein komplettes Kapitel durchgezogen.",
     icon: "🏅",
     earned: (s) => s.completedChapters >= 1,
+    goal: { target: 1, current: (s) => s.completedChapters, unit: "Kapitel" },
   },
   {
     id: "durchmarsch",
@@ -145,6 +177,7 @@ export const BADGES: BadgeDefinition[] = [
     description: "Fünf Kapitel abgeschlossen.",
     icon: "🎖️",
     earned: (s) => s.completedChapters >= 5,
+    goal: { target: 5, current: (s) => s.completedChapters, unit: "Kapitel" },
   },
   {
     id: "treffer",
@@ -152,6 +185,7 @@ export const BADGES: BadgeDefinition[] = [
     description: "10 Aufgaben im ersten Versuch gelöst.",
     icon: "🎯",
     earned: (s) => s.firstTrySolves >= 10,
+    goal: { target: 10, current: (s) => s.firstTrySolves, unit: "Treffer" },
   },
   {
     id: "eigenstaendig",
@@ -159,6 +193,7 @@ export const BADGES: BadgeDefinition[] = [
     description: "10 Übungen ganz ohne Tipp gelöst.",
     icon: "🧠",
     earned: (s) => s.noHintSolves >= 10,
+    goal: { target: 10, current: (s) => s.noHintSolves, unit: "Übungen" },
   },
   {
     id: "problemloeserin",
@@ -166,6 +201,7 @@ export const BADGES: BadgeDefinition[] = [
     description: "25 echte Programmieraufgaben gemeistert.",
     icon: "🛠️",
     earned: (s) => s.solvedExercises >= 25,
+    goal: { target: 25, current: (s) => s.solvedExercises, unit: "Aufgaben" },
   },
   {
     id: "streak-3",
@@ -173,6 +209,7 @@ export const BADGES: BadgeDefinition[] = [
     description: "Drei Tage in Folge gelernt.",
     icon: "⚡",
     earned: (s) => s.streakDays >= 3,
+    goal: { target: 3, current: (s) => s.streakDays, unit: "Tage" },
   },
   {
     id: "streak-7",
@@ -180,6 +217,7 @@ export const BADGES: BadgeDefinition[] = [
     description: "Sieben Tage in Folge gelernt.",
     icon: "🌟",
     earned: (s) => s.streakDays >= 7,
+    goal: { target: 7, current: (s) => s.streakDays, unit: "Tage" },
   },
   {
     id: "streak-30",
@@ -187,6 +225,7 @@ export const BADGES: BadgeDefinition[] = [
     description: "30 Tage in Folge gelernt.",
     icon: "👑",
     earned: (s) => s.streakDays >= 30,
+    goal: { target: 30, current: (s) => s.streakDays, unit: "Tage" },
   },
   {
     id: "sprint",
@@ -194,6 +233,7 @@ export const BADGES: BadgeDefinition[] = [
     description: "20 Aufgaben an einem einzigen Tag.",
     icon: "🚀",
     earned: (s) => s.solvedToday >= 20,
+    goal: { target: 20, current: (s) => s.solvedToday, unit: "heute" },
   },
   {
     id: "nachteule",
@@ -223,8 +263,18 @@ export function earnedBadgeIds(stats: BadgeStats): string[] {
 /* ------------------------------------------------------------------ *
  *  Streak
  * ------------------------------------------------------------------ */
+/**
+ * Tagesschlüssel in **Ortszeit**, nicht in UTC.
+ *
+ * `toISOString()` hätte für alle östlich von Greenwich den Tageswechsel
+ * verschoben: Wer um 01:00 MESZ eine Aufgabe löst, wäre auf den Vortag
+ * gebucht worden – ausgerechnet die Zielgruppe des „Nachteule"-Abzeichens.
+ */
 export function todayKey(date = new Date()): string {
-  return date.toISOString().slice(0, 10);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 /** Neue Streak-Länge nach einer gelösten Aufgabe. */
@@ -232,6 +282,9 @@ export function nextStreak(lastDay: string | null, current: number, today = toda
   if (lastDay === today) return Math.max(current, 1);
   if (!lastDay) return 1;
 
-  const yesterday = new Date(Date.parse(today) - 86_400_000).toISOString().slice(0, 10);
+  // Über den Mittag rechnen, damit die Sommerzeitumstellung (23- bzw. 25-Stunden-
+  // Tage) den Vortag nicht um einen Tag verfehlt.
+  const noon = new Date(`${today}T12:00:00`);
+  const yesterday = todayKey(new Date(noon.getTime() - 86_400_000));
   return lastDay === yesterday ? current + 1 : 1;
 }

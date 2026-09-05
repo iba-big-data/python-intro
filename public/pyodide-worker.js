@@ -49,12 +49,17 @@ function post(message) {
   self.postMessage(message);
 }
 
-function status(phase, detail) {
-  post({ type: "status", phase, detail });
+/**
+ * `progress` ist bewusst ein Stufenwert, kein Byte-Zähler: Pyodide meldet
+ * beim Laden keinen echten Fortschritt. Die Stufen sind ehrlich beschriftet,
+ * damit ein langer erster Start nicht wie ein Hänger wirkt.
+ */
+function status(phase, detail, progress) {
+  post({ type: "status", phase, detail, progress });
 }
 
 async function boot() {
-  status("loading", "Python wird geladen …");
+  status("loading", "Python wird heruntergeladen … (beim ersten Mal ca. 15 MB)", 0.05);
 
   pyodide = await loadPyodide({
     indexURL: PYODIDE_URL,
@@ -64,7 +69,7 @@ async function boot() {
     stderr: () => {},
   });
 
-  status("loading", "Lernumgebung wird vorbereitet …");
+  status("loading", "Lernumgebung wird vorbereitet …", 0.7);
   const version = new URL(self.location.href).searchParams.get("v") ?? "1";
   const source = await fetch(`/python_intro_runtime.py?v=${version}`).then((r) => {
     if (!r.ok) throw new Error("python_intro_runtime.py konnte nicht geladen werden");
@@ -76,7 +81,7 @@ async function boot() {
   pyodide.runPython("import sys; sys.path.insert(0, '/home/pyodide')");
   runtime = pyodide.pyimport("python_intro_runtime");
 
-  status("ready", null);
+  status("ready", null, 1);
   post({ type: "ready", python: pyodide.runPython("import sys; sys.version.split()[0]") });
 }
 
@@ -103,7 +108,7 @@ async function loadImports(code) {
 
   if (found.size > 0) {
     const names = [...found].join(", ");
-    status("packages", `${names} wird geladen – das dauert beim ersten Mal einen Moment …`);
+    status("packages", `${names} wird geladen – mehrere Megabyte, beim ersten Mal dauert das …`, 0.4);
   }
 
   try {

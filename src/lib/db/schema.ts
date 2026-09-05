@@ -101,7 +101,11 @@ export const progress = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    uniqueIndex("progress_student_step_idx").on(t.studentId, t.stepId),
+    // Der Schlüssel muss die Lektion enthalten: Step-IDs sind nur *innerhalb*
+    // einer Lektion eindeutig. "indizierung" gibt es z. B. sowohl in
+    // listen/index als auch in numpy/fortgeschritten – ohne lessonId hätte das
+    // Lösen der einen Aufgabe die andere still als erledigt markiert.
+    uniqueIndex("progress_student_lesson_step_idx").on(t.studentId, t.lessonId, t.stepId),
     index("progress_lesson_idx").on(t.lessonId),
     index("progress_student_idx").on(t.studentId),
   ],

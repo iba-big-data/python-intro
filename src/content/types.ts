@@ -21,6 +21,12 @@ export type StepCommon = {
   text: string;
   /** kurze Erinnerung, was zu tun ist – erscheint über dem Editor */
   task?: string;
+  /**
+   * Überschreibt die XP, die dieser Step wert ist. Ohne Angabe zählt der
+   * Standardwert der Step-Art. Gedacht für Ausreißer: eine Aufgabe, die ein
+   * ganzes Programm verlangt, ist nicht so viel wert wie ein Dreizeiler.
+   */
+  xp?: number;
 };
 
 /** Nur lesen, mit „Weiter“ bestätigen. */
@@ -33,8 +39,6 @@ export type RunStep = StepCommon & {
   kind: "run";
   program: string;
   surface: Surface;
-  /** Programm im Lektionstext anzeigen (Standard: true) */
-  showProgram?: boolean;
   /** Ausgabe vorher raten lassen */
   prediction?: Prediction;
   /**
@@ -134,8 +138,26 @@ export type Chapter = {
  *  Hilfsfunktionen
  * ------------------------------------------------------------------ */
 
-/** XP-Wert eines Steps – Übungen sind mehr wert als Lesen. */
-export function stepXp(step: Step): number {
+/**
+ * Wie viel Substanz steckt in einer Übung? Die Musterlösung ist dafür der
+ * ehrlichste verfügbare Maßstab: ein Einzeiler und eine komplette Spielschleife
+ * waren vorher beide 40 XP wert, was das ganze System entwertet hat.
+ */
+function exerciseXp(step: ExerciseStep): number {
+  const lines = step.solution
+    .trim()
+    .split("\n")
+    .filter((line) => line.trim().length > 0).length;
+
+  if (lines <= 2) return 20;
+  if (lines <= 9) return 40;
+  if (lines <= 19) return 70;
+  if (lines <= 34) return 100;
+  return 140;
+}
+
+/** Standard-XP je Step-Art – Übungen sind mehr wert als Lesen. */
+function defaultStepXp(step: Step): number {
   switch (step.kind) {
     case "read":
       return 5;
@@ -144,12 +166,35 @@ export function stepXp(step: Step): number {
     case "experiment":
       return 15;
     case "exercise":
-      return 40;
+      return exerciseXp(step);
   }
+}
+
+/** XP-Wert eines Steps – `step.xp` schlägt den Standard der Step-Art. */
+export function stepXp(step: Step): number {
+  return step.xp ?? defaultStepXp(step);
 }
 
 export function lessonXp(lesson: Lesson): number {
   return lesson.steps.reduce((sum, s) => sum + stepXp(s), 0);
+}
+
+/**
+ * Grobe Schätzung, wie lange eine Lektion dauert – damit sich eine Lernsession
+ * planen lässt. Die Minutenwerte kommen aus Beobachtung, nicht aus Messung:
+ * Lesen geht schnell, eine echte Aufgabe kostet ein Vielfaches davon.
+ */
+const MINUTES_PER_KIND: Record<Step["kind"], number> = {
+  read: 1,
+  run: 2,
+  experiment: 3,
+  exercise: 8,
+};
+
+export function lessonMinutes(lesson: Lesson): number {
+  const raw = lesson.steps.reduce((sum, step) => sum + MINUTES_PER_KIND[step.kind], 0);
+  // auf 5 Minuten runden – eine Schätzung soll nicht nach Stoppuhr aussehen
+  return Math.max(5, Math.round(raw / 5) * 5);
 }
 
 /** Vollständige Step-ID (eindeutig über alle Lektionen hinweg) */

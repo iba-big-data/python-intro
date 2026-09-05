@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (pathname.startsWith("/lernen")) {
+  if (pathname.startsWith("/lernen") || pathname.startsWith("/profil")) {
     const session = await verifyToken<{ studentId?: string }>(
       request.cookies.get(STUDENT_COOKIE)?.value,
     );
@@ -24,5 +24,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/lernen/:path*"],
+  matcher: ["/admin/:path*", "/lernen/:path*", "/profil/:path*"],
 };

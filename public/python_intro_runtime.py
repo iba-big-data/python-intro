@@ -670,7 +670,12 @@ def run(payload):
 
     result = {"output": output, "error": error, "passed": False, "message": None}
 
-    if kind == "run":
+    if kind == "scratch":
+        # Freies Ausprobieren: Code läuft, wird aber nicht geprüft. Bewusst ein
+        # eigener Zweig statt des Standardfalls unten – der meldet "bestanden"
+        # und würde den Step ungewollt als gelöst zählen.
+        pass
+    elif kind == "run":
         result.update(
             check_run(code, step.get("program", ""), error, step.get("expectsError", False))
         )

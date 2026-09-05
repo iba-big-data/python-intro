@@ -44,11 +44,16 @@ export function StudentBar({
             </div>
           )}
 
-          <div className="hidden w-40 sm:block">
+          <div className="hidden w-44 sm:block">
             <div className="mb-1 flex items-baseline justify-between text-[11px]">
-              <span className="font-medium text-neon">{level.title}</span>
-              <span className="tabular-nums text-ink-faint">
-                {level.intoLevel}/{level.levelSpan}
+              <span className="font-medium text-neon">
+                Lvl {level.level} · {level.title}
+              </span>
+              <span
+                className="tabular-nums text-ink-faint"
+                title={`Noch ${Math.max(0, level.levelSpan - level.intoLevel)} XP bis zum nächsten Level`}
+              >
+                {level.intoLevel}/{level.levelSpan} XP
               </span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-line">
@@ -61,17 +66,19 @@ export function StudentBar({
             </div>
           </div>
 
-          <div className="flex items-center gap-1 text-xs text-ink-dim" title="Gesammelte XP">
+          <div className="flex items-center gap-1 text-xs text-ink-dim" title="Insgesamt gesammelte XP">
             <Zap className="size-3.5 text-lime" />
             <span className="tabular-nums">{student.xp}</span>
+            <span className="hidden text-ink-faint sm:inline">XP</span>
           </div>
 
-          <span
-            className="flex size-9 items-center justify-center rounded-xl border border-line bg-surface text-lg"
-            title={student.nickname}
+          <Link
+            href="/profil"
+            title={`${student.nickname} – Profil und Abzeichen`}
+            className="flex size-9 items-center justify-center rounded-xl border border-line bg-surface text-lg transition hover:border-neon/60 hover:bg-abyss"
           >
             {student.avatar}
-          </span>
+          </Link>
 
           <button
             onClick={logout}

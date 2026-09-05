@@ -8,6 +8,8 @@ export type ShelfBadge = {
   description: string;
   icon: string;
   secret: boolean;
+  /** Wie weit man ist – ohne das bleibt ein offenes Abzeichen eine Blackbox. */
+  goal?: { current: number; target: number; unit: string } | null;
 };
 
 /** Abzeichen-Regal: Verdientes leuchtet, Offenes bleibt als Ziel sichtbar. */
@@ -16,10 +18,6 @@ export function BadgeShelf({ all, earned }: { all: ShelfBadge[]; earned: string[
 
   return (
     <div>
-      <p className="mb-4 text-sm text-ink-dim">
-        {earned.length} von {all.length} freigeschaltet
-      </p>
-
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {all.map((badge, index) => {
           const has = owned.has(badge.id);
@@ -44,13 +42,29 @@ export function BadgeShelf({ all, earned }: { all: ShelfBadge[]; earned: string[
               >
                 {hidden ? "❓" : badge.icon}
               </span>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className={`text-sm font-semibold ${has ? "text-ink" : "text-ink-faint"}`}>
                   {hidden ? "Geheimes Abzeichen" : badge.name}
                 </div>
                 <div className="mt-0.5 text-xs leading-relaxed text-ink-faint">
                   {hidden ? "Finde selbst heraus, wie du es bekommst." : badge.description}
                 </div>
+
+                {!has && !hidden && badge.goal && (
+                  <div className="mt-2">
+                    <div className="h-1 overflow-hidden rounded-full bg-line">
+                      <div
+                        className="h-full rounded-full bg-neon/70"
+                        style={{
+                          width: `${Math.min(100, (badge.goal.current / badge.goal.target) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                    <div className="mt-1 text-[11px] tabular-nums text-ink-faint">
+                      {badge.goal.current} / {badge.goal.target} {badge.goal.unit}
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           );

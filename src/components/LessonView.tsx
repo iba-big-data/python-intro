@@ -7,7 +7,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
-  Circle,
+  FlaskConical,
   Flame,
   Loader2,
   Play,
@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import type { Lesson, Step } from "@/content/types";
 import { stepXp } from "@/content/types";
-import { levelInfo, type LevelInfo } from "@/lib/gamification";
+import { levelInfo, todayKey, xpAfterHints, type LevelInfo } from "@/lib/gamification";
 import { usePython, type RunResult } from "@/lib/usePython";
 import { Markdown } from "./Markdown";
 import { CodeEditor } from "./CodeEditor";
@@ -141,6 +141,8 @@ export function LessonView({
           hintsUsed: usedHints,
           code: submitted,
           hourOfDay: new Date().getHours(),
+          // Der Server läuft in UTC – für die Streak zählt aber unser Tag.
+          today: todayKey(),
         }),
       });
 
@@ -152,7 +154,11 @@ export function LessonView({
       setStreak(data.streakDays);
 
       if (data.newlySolved) {
-        const gained = data.xp - xp;
+        // Der Server sagt jetzt direkt, was dieser Step wert war – vorher wurde
+        // das aus der XP-Summe zurückgerechnet, was bei zwei schnell
+        // aufeinanderfolgenden Meldungen danebenlag.
+        const gained: number = data.earnedXp ?? 0;
+
         if (data.leveledUp || data.newBadges.length > 0) {
           setReward({
             xp: gained,
@@ -166,7 +172,7 @@ export function LessonView({
         }
       }
     },
-    [lesson.id, xp],
+    [lesson.id],
   );
 
   const handleResult = useCallback(
@@ -189,6 +195,19 @@ export function LessonView({
     setBusy(false);
     handleResult(step.id, runResult, code);
   }, [step, busy, python, code, handleResult]);
+
+  /**
+   * Freies Ausprobieren: Code läuft, wird aber nicht geprüft und nicht gemeldet.
+   * Damit kann man eine Variante durchspielen, ohne einen Fehlversuch zu
+   * kassieren – und ohne die Vorlage exakt treffen zu müssen.
+   */
+  const runScratch = useCallback(async () => {
+    if (!step || busy || !python.ready) return;
+    setBusy(true);
+    const runResult = await python.run(code, "editor", { kind: "scratch" });
+    setBusy(false);
+    setResult(runResult);
+  }, [step, busy, python, code]);
 
   const runShell = useCallback(
     async (input: string) => {
@@ -224,6 +243,12 @@ export function LessonView({
 
   const stepSolved = step ? solved.has(step.id) : false;
   const solvedCount = lesson.steps.filter((s) => solved.has(s.id)).length;
+
+  // XP dieser Lektion: eingesammelt (nach Tipp-Abzug) und insgesamt möglich.
+  const lessonXpEarned = lesson.steps
+    .filter((s) => solved.has(s.id))
+    .reduce((sum, s) => sum + xpAfterHints(stepXp(s), hints[s.id] ?? 0), 0);
+  const lessonXpTotal = lesson.steps.reduce((sum, s) => sum + stepXp(s), 0);
   const needsPrediction =
     step?.kind === "run" && step.prediction && !predictionDone.has(step.id) && !stepSolved;
 
@@ -248,6 +273,8 @@ export function LessonView({
         lessonTitle={lesson.title}
         solvedCount={solvedCount}
         total={lesson.steps.length}
+        lessonXpEarned={lessonXpEarned}
+        lessonXpTotal={lessonXpTotal}
         level={level}
         xp={xp}
         streak={streak}
@@ -277,7 +304,13 @@ export function LessonView({
                 transition={{ duration: 0.22 }}
               >
                 {finished ? (
-                  <Outro lesson={lesson} nextLessonId={nextLessonId} />
+                  <Outro
+                    lesson={lesson}
+                    nextLessonId={nextLessonId}
+                    earnedXp={lessonXpEarned}
+                    possibleXp={lessonXpTotal}
+                    solvedCount={solvedCount}
+                  />
                 ) : (
                   <>
                     <Markdown>{step!.text}</Markdown>
@@ -343,7 +376,12 @@ export function LessonView({
                   </button>
                 ))}
               </div>
-              <PythonStatus phase={python.phase} text={python.statusText} onRestart={python.restart} />
+              <PythonStatus
+                phase={python.phase}
+                text={python.statusText}
+                progress={python.progress}
+                onRestart={python.restart}
+              />
             </div>
 
             {stepSolved && <SolvedBanner />}
@@ -358,19 +396,30 @@ export function LessonView({
                     <div className="min-h-0 flex-1 overflow-auto">
                       <CodeEditor value={code} onChange={setCode} onRun={runEditor} />
                     </div>
-                    <div className="flex items-center justify-between border-t border-line bg-surface/40 px-3 py-2">
-                      <span className="text-xs text-ink-faint">
+                    <div className="flex items-center justify-between gap-3 border-t border-line bg-surface/40 px-3 py-2">
+                      <span className="min-w-0 truncate text-xs text-ink-faint">
                         {step!.task ?? "Schreib deinen Code und führ ihn aus."}
                       </span>
-                      <button
-                        onClick={runEditor}
-                        disabled={busy || !python.ready || Boolean(needsPrediction)}
-                        title={needsPrediction ? "Rate erst, was herauskommt." : "Strg/Cmd + Enter"}
-                        className="flex shrink-0 items-center gap-1.5 rounded-lg bg-lime px-4 py-2 text-sm font-semibold text-void transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}
-                        Ausführen
-                      </button>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <button
+                          onClick={runScratch}
+                          disabled={busy || !python.ready}
+                          title="Führt den Code aus, ohne ihn zu prüfen – zum Ausprobieren."
+                          className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-2 text-sm text-ink-dim transition hover:border-line-bright hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <FlaskConical className="size-3.5" />
+                          <span className="hidden sm:inline">Ausprobieren</span>
+                        </button>
+                        <button
+                          onClick={runEditor}
+                          disabled={busy || !python.ready || Boolean(needsPrediction)}
+                          title={needsPrediction ? "Rate erst, was herauskommt." : "Strg/Cmd + Enter"}
+                          className="flex items-center gap-1.5 rounded-lg bg-lime px-4 py-2 text-sm font-semibold text-void transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}
+                          Ausführen
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -424,7 +473,9 @@ export function LessonView({
 
       <RewardOverlay reward={reward} onClose={() => setReward(null)} />
 
-      <div className="pointer-events-none fixed bottom-6 right-6 z-40">
+      {/* Oben mittig statt unten rechts: dort schaut man beim Lösen ohnehin hin,
+          direkt unter Fortschrittsbalken und XP-Anzeige. */}
+      <div className="pointer-events-none fixed inset-x-0 top-16 z-40 flex justify-center">
         <AnimatePresence>
           {xpToast !== null && <XpToast amount={xpToast} onDone={() => setXpToast(null)} />}
         </AnimatePresence>
@@ -441,6 +492,8 @@ function Header({
   lessonTitle,
   solvedCount,
   total,
+  lessonXpEarned,
+  lessonXpTotal,
   level,
   xp,
   streak,
@@ -450,6 +503,8 @@ function Header({
   lessonTitle: string;
   solvedCount: number;
   total: number;
+  lessonXpEarned: number;
+  lessonXpTotal: number;
   level: LevelInfo;
   xp: number;
   streak: number;
@@ -470,17 +525,27 @@ function Header({
         <div className="truncate text-sm font-semibold">{lessonTitle}</div>
       </div>
 
-      <div className="hidden items-center gap-2 sm:flex">
-        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-line">
-          <motion.div
-            className="h-full rounded-full bg-lime"
-            animate={{ width: `${total ? (solvedCount / total) * 100 : 0}%` }}
-            transition={{ type: "spring", stiffness: 200, damping: 25 }}
-          />
+      <div className="hidden items-center gap-2.5 sm:flex">
+        <div className="w-32">
+          <div className="h-1.5 overflow-hidden rounded-full bg-line">
+            <motion.div
+              className="h-full rounded-full bg-lime"
+              animate={{ width: `${total ? (solvedCount / total) * 100 : 0}%` }}
+              transition={{ type: "spring", stiffness: 200, damping: 25 }}
+            />
+          </div>
+          <div className="mt-1 flex items-baseline justify-between text-[10px] tabular-nums text-ink-faint">
+            <span>
+              {solvedCount}/{total} Aufgaben
+            </span>
+            <span
+              className="flex items-center gap-0.5 text-lime"
+              title={`${lessonXpEarned} von ${lessonXpTotal} XP in dieser Lektion`}
+            >
+              ⚡ {lessonXpEarned}/{lessonXpTotal}
+            </span>
+          </div>
         </div>
-        <span className="text-xs tabular-nums text-ink-faint">
-          {solvedCount}/{total}
-        </span>
       </div>
 
       {streak > 0 && (
@@ -498,8 +563,8 @@ function Header({
           <div className="text-[11px] leading-tight text-ink-faint">Level {level.level}</div>
           <div className="text-xs font-semibold leading-tight text-neon">{level.title}</div>
         </div>
-        <div className="relative">
-          <span className="flex size-9 items-center justify-center rounded-xl border border-line bg-abyss text-lg">
+        <Link href="/profil" className="relative" title={`${student.nickname} – Profil und Abzeichen`}>
+          <span className="flex size-9 items-center justify-center rounded-xl border border-line bg-abyss text-lg transition hover:border-neon/60">
             {student.avatar}
           </span>
           <svg className="pointer-events-none absolute -inset-1" viewBox="0 0 44 44">
@@ -516,7 +581,7 @@ function Header({
               opacity="0.85"
             />
           </svg>
-        </div>
+        </Link>
       </div>
     </header>
   );
@@ -565,12 +630,25 @@ function StepDots({
   );
 }
 
-function Outro({ lesson, nextLessonId }: { lesson: Lesson; nextLessonId: string | null }) {
+function Outro({
+  lesson,
+  nextLessonId,
+  earnedXp,
+  possibleXp,
+  solvedCount,
+}: {
+  lesson: Lesson;
+  nextLessonId: string | null;
+  earnedXp: number;
+  possibleXp: number;
+  solvedCount: number;
+}) {
   useEffect(() => {
     fireConfetti("big");
   }, []);
 
-  const total = lesson.steps.reduce((sum, step) => sum + stepXp(step), 0);
+  const complete = solvedCount >= lesson.steps.length;
+  const missing = Math.max(0, possibleXp - earnedXp);
 
   return (
     <div>
@@ -581,13 +659,29 @@ function Outro({ lesson, nextLessonId }: { lesson: Lesson; nextLessonId: string 
 
       <Markdown>{lesson.outro}</Markdown>
 
-      <div className="mt-8 flex items-center gap-3 rounded-2xl border border-lime/30 bg-lime/5 px-5 py-4">
-        <span className="text-2xl">⚡</span>
-        <div>
-          <div className="font-semibold text-lime">{total} XP möglich in dieser Lektion</div>
-          <div className="text-xs text-ink-dim">
-            Alles gelöst? Dann hast du sie komplett eingesammelt.
+      {/* Was tatsächlich hängen geblieben ist – nicht, was theoretisch möglich war. */}
+      <div className="mt-8 rounded-2xl border border-lime/30 bg-lime/5 px-5 py-4">
+        <div className="flex items-center gap-3">
+          <span className="text-3xl">⚡</span>
+          <div>
+            <div className="text-xl font-bold text-lime">
+              +{earnedXp} XP eingesammelt
+            </div>
+            <div className="text-xs text-ink-dim">
+              {complete && missing === 0
+                ? "Alles gelöst, ohne einen Tipp – die volle Punktzahl."
+                : complete
+                  ? `Von ${possibleXp} XP möglich – die Differenz sind die Tipps, die du gebraucht hast.`
+                  : `Von ${possibleXp} XP möglich. Offene Schritte kannst du jederzeit nachholen.`}
+            </div>
           </div>
+        </div>
+
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-line">
+          <div
+            className="h-full rounded-full bg-lime transition-all"
+            style={{ width: `${possibleXp ? (earnedXp / possibleXp) * 100 : 0}%` }}
+          />
         </div>
       </div>
 
@@ -622,10 +716,12 @@ function Outro({ lesson, nextLessonId }: { lesson: Lesson; nextLessonId: string 
 function PythonStatus({
   phase,
   text,
+  progress,
   onRestart,
 }: {
   phase: string;
   text: string | null;
+  progress: number;
   onRestart: () => void;
 }) {
   if (phase === "ready") {
@@ -649,10 +745,18 @@ function PythonStatus({
     );
   }
 
+  // Beim ersten Start lädt der Browser rund 15 MB. Ohne sichtbaren Balken wirkt
+  // das wie ein Hänger – gerade im Uni-WLAN.
   return (
-    <span className="flex items-center gap-1.5 py-2 text-[11px] text-cyan">
-      <Loader2 className="size-3 animate-spin" />
-      <span className="hidden max-w-[16rem] truncate sm:inline">{text ?? "lädt …"}</span>
+    <span className="flex items-center gap-2 py-2 text-[11px] text-cyan">
+      <Loader2 className="size-3 shrink-0 animate-spin" />
+      <span className="hidden max-w-[18rem] truncate sm:inline">{text ?? "lädt …"}</span>
+      <span className="h-1 w-16 shrink-0 overflow-hidden rounded-full bg-line">
+        <span
+          className="block h-full rounded-full bg-cyan transition-all duration-500"
+          style={{ width: `${Math.max(5, Math.min(100, progress * 100))}%` }}
+        />
+      </span>
     </span>
   );
 }

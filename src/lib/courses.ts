@@ -1,9 +1,10 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gt, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { badges, courseLessons, courses, progress, students } from "@/lib/db/schema";
 import { chapters, getChapterOfLesson, getLesson } from "@/content";
+import { stepXp } from "@/content/types";
 import type { Chapter, Lesson } from "@/content/types";
-import { type BadgeStats, levelInfo } from "@/lib/gamification";
+import { type BadgeStats, levelInfo, todayKey, xpAfterHints } from "@/lib/gamification";
 
 /** Reihenfolge, in der ein Kapitel im Katalog steht – für stabile Sortierung. */
 const catalogOrder = new Map<string, number>();
@@ -85,6 +86,8 @@ export type StudentOverview = {
   solvedByLesson: Record<string, number>;
   earnedBadges: string[];
   level: ReturnType<typeof levelInfo>;
+  /** zuletzt bearbeitete Lektion – der Einstiegspunkt für „weitermachen" */
+  lastLessonId: string | null;
 };
 
 export async function getStudentOverview(
@@ -96,10 +99,16 @@ export async function getStudentOverview(
   const [course] = await db.select().from(courses).where(eq(courses.id, student.courseId)).limit(1);
   if (!course) return null;
 
-  const [curriculum, rows, badgeRows] = await Promise.all([
+  const [curriculum, rows, badgeRows, recent] = await Promise.all([
     getCourseCurriculum(course.id),
     db.select().from(progress).where(eq(progress.studentId, studentId)),
     db.select().from(badges).where(eq(badges.studentId, studentId)),
+    db
+      .select({ lessonId: progress.lessonId })
+      .from(progress)
+      .where(eq(progress.studentId, studentId))
+      .orderBy(desc(progress.updatedAt))
+      .limit(1),
   ]);
 
   const progressByStep: Record<string, StepProgress> = {};
@@ -116,6 +125,11 @@ export async function getStudentOverview(
     }
   }
 
+  // Nur auf Lektionen zeigen, die auch (noch) zum Kurs gehören.
+  const inCourse = new Set(curriculum.flatMap((c) => c.lessons.map((l) => l.id)));
+  const lastLessonId =
+    recent[0] && inCourse.has(recent[0].lessonId) ? recent[0].lessonId : null;
+
   return {
     student,
     course,
@@ -124,6 +138,7 @@ export async function getStudentOverview(
     solvedByLesson,
     earnedBadges: badgeRows.map((row) => row.badgeId),
     level: levelInfo(student.xp),
+    lastLessonId,
   };
 }
 
@@ -132,6 +147,7 @@ export async function computeBadgeStats(
   studentId: string,
   courseId: string,
   hourOfDay: number,
+  today: string = todayKey(),
 ): Promise<BadgeStats> {
   const [student] = await db.select().from(students).where(eq(students.id, studentId)).limit(1);
   const rows = await db.select().from(progress).where(eq(progress.studentId, studentId));
@@ -168,8 +184,6 @@ export async function computeBadgeStats(
     if (chapterDone && chapter.lessons.length > 0) completedChapters++;
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-
   return {
     solvedSteps: solvedKeys.size,
     solvedExercises,
@@ -179,9 +193,102 @@ export async function computeBadgeStats(
     completedChapters,
     streakDays: student?.streakDays ?? 0,
     solvedToday: rows.filter(
-      (row) => row.solved && row.solvedAt && row.solvedAt.toISOString().slice(0, 10) === today,
+      (row) => row.solved && row.solvedAt && todayKey(row.solvedAt) === today,
     ).length,
     hourOfDay,
+  };
+}
+
+/* ------------------------------------------------------------------ *
+ *  Profil
+ * ------------------------------------------------------------------ */
+export type ProfileStats = {
+  badgeStats: BadgeStats;
+  /** tatsächlich in diesem Kurs eingesammelte XP (nach Tipp-Abzug) */
+  earnedXp: number;
+  /** maximal erreichbare XP im freigeschalteten Kurs */
+  possibleXp: number;
+  solvedSteps: number;
+  totalSteps: number;
+  totalLessons: number;
+  totalChapters: number;
+  /**
+   * Wo man im Kurs steht, in Prozent – 90 heißt „besser als 90 % der anderen".
+   * Bewusst kein Ranglistenplatz: die Zahl motiviert, ohne jemanden
+   * namentlich ans Ende einer öffentlichen Liste zu stellen.
+   */
+  percentile: number | null;
+  /** wie viele Personen im Kurs überhaupt schon angefangen haben */
+  courseSize: number;
+};
+
+export async function getProfileStats(
+  studentId: string,
+  courseId: string,
+): Promise<ProfileStats> {
+  const [student] = await db.select().from(students).where(eq(students.id, studentId)).limit(1);
+  const [rows, curriculum, badgeStats] = await Promise.all([
+    db.select().from(progress).where(eq(progress.studentId, studentId)),
+    getCourseCurriculum(courseId),
+    computeBadgeStats(studentId, courseId, new Date().getHours()),
+  ]);
+
+  const byKey = new Map(rows.map((row) => [`${row.lessonId}::${row.stepId}`, row]));
+
+  let earnedXp = 0;
+  let possibleXp = 0;
+  let solvedSteps = 0;
+  let totalSteps = 0;
+  let totalLessons = 0;
+
+  for (const chapter of curriculum) {
+    for (const lesson of chapter.lessons) {
+      totalLessons++;
+      for (const step of lesson.steps) {
+        totalSteps++;
+        const base = stepXp(step);
+        possibleXp += base;
+
+        const row = byKey.get(`${lesson.id}::${step.id}`);
+        if (row?.solved) {
+          solvedSteps++;
+          earnedXp += xpAfterHints(base, row.hintsUsed);
+        }
+      }
+    }
+  }
+
+  // Perzentil innerhalb des Kurses, nur unter denen, die schon XP gesammelt haben.
+  const [{ started = 0 } = {}] = await db
+    .select({ started: sql<number>`count(*)::int` })
+    .from(students)
+    .where(and(eq(students.courseId, courseId), gt(students.xp, 0)));
+
+  const [{ below = 0 } = {}] = await db
+    .select({ below: sql<number>`count(*)::int` })
+    .from(students)
+    .where(
+      and(
+        eq(students.courseId, courseId),
+        gt(students.xp, 0),
+        sql`${students.xp} < ${student?.xp ?? 0}`,
+      ),
+    );
+
+  // Unter fünf aktiven Personen ist ein Perzentil eher entlarvend als hilfreich.
+  const percentile =
+    started >= 5 && (student?.xp ?? 0) > 0 ? Math.round((below / started) * 100) : null;
+
+  return {
+    badgeStats,
+    earnedXp,
+    possibleXp,
+    solvedSteps,
+    totalSteps,
+    totalLessons,
+    totalChapters: curriculum.length,
+    percentile,
+    courseSize: started,
   };
 }
 

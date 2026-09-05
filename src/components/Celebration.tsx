@@ -65,6 +65,19 @@ export function RewardOverlay({ reward, onClose }: { reward: Reward | null; onCl
             onClick={(event) => event.stopPropagation()}
             className="w-full max-w-sm rounded-3xl border border-neon/40 bg-surface p-8 text-center glow-neon"
           >
+            {/* Die XP zuerst – das ist die Zahl, für die man gerade gearbeitet hat.
+                Vorher wurde sie ins Overlay hineingereicht und nie angezeigt. */}
+            {reward.xp > 0 && (
+              <motion.div
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 18, delay: 0.1 }}
+                className="mb-5 inline-flex items-center gap-2 rounded-full border border-lime/40 bg-lime/15 px-5 py-2 text-2xl font-bold text-lime"
+              >
+                +{reward.xp} XP
+              </motion.div>
+            )}
+
             {reward.leveledUp && (
               <>
                 <motion.div

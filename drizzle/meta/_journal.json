@@ -8,6 +8,13 @@
       "when": 1786717526393,
       "tag": "0000_youthful_mole_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788629275412,
+      "tag": "0001_fortschritt_pro_lektion",
+      "breakpoints": true
     }
   ]
 }

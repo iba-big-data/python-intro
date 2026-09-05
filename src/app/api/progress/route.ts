@@ -5,7 +5,14 @@ import { badges, progress, students } from "@/lib/db/schema";
 import { getStudentSession } from "@/lib/auth";
 import { computeBadgeStats, courseHasLesson } from "@/lib/courses";
 import { getLesson, getStep, stepXp } from "@/content";
-import { BADGES_BY_ID, earnedBadgeIds, levelInfo, nextStreak, todayKey } from "@/lib/gamification";
+import {
+  BADGES_BY_ID,
+  earnedBadgeIds,
+  levelInfo,
+  nextStreak,
+  todayKey,
+  xpAfterHints,
+} from "@/lib/gamification";
 
 export async function POST(request: Request) {
   const session = await getStudentSession();
@@ -20,6 +27,7 @@ export async function POST(request: Request) {
     hintsUsed?: number;
     code?: string;
     hourOfDay?: number;
+    today?: string;
   };
   try {
     body = await request.json();
@@ -49,10 +57,24 @@ export async function POST(request: Request) {
     ? Math.max(0, Math.min(23, body.hourOfDay as number))
     : new Date().getHours();
 
+  // Der Server läuft in UTC, gelernt wird in MESZ – für die Streak zählt der Tag
+  // der Studierenden. Deshalb schickt der Client sein lokales Datum mit. Wir
+  // übernehmen es nur, wenn es höchstens einen Tag vom Serverdatum abweicht;
+  // damit lässt sich die Streak nicht durch eine gefälschte Uhr hochtreiben.
+  const localDay = clientDay(body.today);
+
+  // Die Lektion gehört zwingend in die Bedingung: Step-IDs sind nur innerhalb
+  // einer Lektion eindeutig (siehe Kommentar am Index in db/schema.ts).
   const [existing] = await db
     .select()
     .from(progress)
-    .where(and(eq(progress.studentId, session.studentId), eq(progress.stepId, stepId)))
+    .where(
+      and(
+        eq(progress.studentId, session.studentId),
+        eq(progress.lessonId, lessonId),
+        eq(progress.stepId, stepId),
+      ),
+    )
     .limit(1);
 
   const newlySolved = solved && !existing?.solved;
@@ -98,28 +120,28 @@ export async function POST(request: Request) {
   let streakDays = student.streakDays;
   let leveledUp = false;
 
+  let earnedXp = 0;
+
   if (newlySolved) {
-    // Tipps kosten ein Viertel der XP – Hilfe ist erlaubt, aber nicht gratis.
-    const base = stepXp(step);
-    const earned = Math.max(2, Math.round(base * (hintsUsed > 0 ? 0.75 : 1)));
+    // Tipps kosten gestaffelt XP – Hilfe ist erlaubt, aber nicht gratis.
+    earnedXp = xpAfterHints(stepXp(step), hintsUsed);
 
     const before = levelInfo(xp).level;
-    xp += earned;
+    xp += earnedXp;
     leveledUp = levelInfo(xp).level > before;
 
-    const today = todayKey();
-    streakDays = nextStreak(student.lastStreakDay, student.streakDays, today);
+    streakDays = nextStreak(student.lastStreakDay, student.streakDays, localDay);
 
     await db
       .update(students)
-      .set({ xp, streakDays, lastStreakDay: today, lastActiveAt: now })
+      .set({ xp, streakDays, lastStreakDay: localDay, lastActiveAt: now })
       .where(eq(students.id, student.id));
   } else {
     await db.update(students).set({ lastActiveAt: now }).where(eq(students.id, student.id));
   }
 
   // Abzeichen prüfen
-  const stats = await computeBadgeStats(session.studentId, session.courseId, hourOfDay);
+  const stats = await computeBadgeStats(session.studentId, session.courseId, hourOfDay, localDay);
   const deserved = earnedBadgeIds({ ...stats, streakDays });
 
   const owned = new Set(
@@ -138,6 +160,8 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     newlySolved,
+    /** XP für genau diesen Step – der Client muss sie nicht aus Summen ableiten */
+    earnedXp,
     xp,
     level: levelInfo(xp),
     leveledUp,
@@ -147,4 +171,20 @@ export async function POST(request: Request) {
       return { id, name: badge.name, description: badge.description, icon: badge.icon };
     }),
   });
+}
+
+/**
+ * Nimmt das vom Browser gemeldete Ortsdatum, sofern es plausibel ist –
+ * sonst das Serverdatum. Erlaubt sind ±1 Tag um heute (UTC), was jede
+ * Zeitzone abdeckt, aber kein freies Setzen des Datums.
+ */
+function clientDay(value: unknown): string {
+  const serverDay = todayKey(new Date());
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return serverDay;
+
+  const noon = Date.parse(`${serverDay}T12:00:00Z`);
+  const allowed = new Set(
+    [-1, 0, 1].map((offset) => todayKey(new Date(noon + offset * 86_400_000))),
+  );
+  return allowed.has(value) ? value : serverDay;
 }

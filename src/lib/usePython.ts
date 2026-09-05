@@ -33,7 +33,7 @@ const HARD_TIMEOUT_MS = 30_000;
  * Bei jeder Änderung an pyodide-worker.js oder python_intro_runtime.py hochzählen.
  * Sonst bedienen Browser den alten Stand aus dem Cache weiter.
  */
-export const RUNTIME_VERSION = "3";
+export const RUNTIME_VERSION = "4";
 
 type Pending = {
   resolve: (result: RunResult) => void;
@@ -47,6 +47,8 @@ export function usePython() {
 
   const [phase, setPhase] = useState<PythonPhase>("boot");
   const [statusText, setStatusText] = useState<string | null>("Python wird gestartet …");
+  /** grober Ladefortschritt 0 … 1, damit der erste Start nicht wie ein Hänger wirkt */
+  const [progress, setProgress] = useState(0);
 
   const spawn = useCallback(() => {
     const worker = new Worker(`/pyodide-worker.js?v=${RUNTIME_VERSION}`, { type: "module" });
@@ -57,12 +59,14 @@ export function usePython() {
       if (message.type === "status") {
         setPhase(message.phase);
         setStatusText(message.detail ?? null);
+        if (typeof message.progress === "number") setProgress(message.progress);
         return;
       }
 
       if (message.type === "ready") {
         setPhase("ready");
         setStatusText(null);
+        setProgress(1);
         return;
       }
 
@@ -107,6 +111,7 @@ export function usePython() {
     pendingRef.current.clear();
     setPhase("boot");
     setStatusText("Python wird neu gestartet …");
+    setProgress(0);
     spawn();
   }, [spawn]);
 
@@ -151,5 +156,13 @@ export function usePython() {
     workerRef.current?.postMessage({ type: "resetShell" });
   }, []);
 
-  return { run, resetShell, restart, phase, statusText, ready: phase === "ready" || phase === "running" };
+  return {
+    run,
+    resetShell,
+    restart,
+    phase,
+    statusText,
+    progress,
+    ready: phase === "ready" || phase === "running",
+  };
 }
