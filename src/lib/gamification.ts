@@ -5,29 +5,51 @@
  * damit sich der Einstieg belohnend anfühlt, und ziehen dann sanft an.
  */
 
+/**
+ * Die Rangtitel folgen grob dem Aufbau des Kurses – Schleifen, Listen, Strings,
+ * Funktionen, Daten, Projekt.
+ *
+ * Sie sind bewusst geschlechtsneutral formuliert. Vorher standen dort
+ * durchgehend generisch maskuline Personenbezeichnungen („Bug-Jäger",
+ * „Refactor-Ritter") mit einer einzigen femininen Ausnahme – in einem Kurs,
+ * den alle sehen, ist das eine unnötige Stolperstelle. Sachbezeichnungen statt
+ * Personenbezeichnungen lösen das, ohne den Ton zu verlieren.
+ */
 export const LEVEL_TITLES = [
   "Hello World",
   "Erste Zeilen",
-  "Schleifendreher",
-  "Bug-Jäger",
-  "Logik-Lotse",
-  "Listenmeister",
-  "String-Schmied",
-  "Funktionsarchitekt",
-  "Datenflüsterer",
-  "Code-Alchemist",
-  "Python-Pilot",
-  "Algorithmus-Wanderin",
-  "Refactor-Ritter",
-  "Compiler-Charmeur",
+  "Schleifen im Griff",
+  "Auf Bug-Jagd",
+  "Klare Logik",
+  "Listen-Routine",
+  "String-Handwerk",
+  "Eigene Funktionen",
+  "Datengespür",
+  "Code-Alchemie",
+  "Python im Flug",
+  "Auf Algorithmen-Pfaden",
+  "Refactor-Reflex",
+  "Compiler-Charme",
   "Legende der Laufzeit",
 ];
 
-/** Gesamt-XP, die für das Erreichen von Level n nötig sind. */
+/** Höchstes Level – so viele, wie es Titel gibt. */
+export const MAX_LEVEL = LEVEL_TITLES.length;
+
+/**
+ * Gesamt-XP, die für das Erreichen von Level n nötig sind.
+ *
+ * Die Kurve ist an den Umfang des Katalogs geknüpft: Level 15 liegt bei rund
+ * 85 % der insgesamt vergebbaren XP, ein Kurs mit nur den Grundlagenkapiteln
+ * kommt auf Level 12. Die frühere Kurve (120n + 40n²) verlangte für Level 15
+ * fast doppelt so viele XP, wie der ganze Kurs überhaupt hergibt – die
+ * obersten vier Ränge waren damit reine Deko. Alle Schwellen liegen unter den
+ * alten, niemand verliert durch die Umstellung ein Level.
+ */
 export function xpForLevel(level: number): number {
   if (level <= 1) return 0;
   const n = level - 1;
-  return 120 * n + 40 * n * n;
+  return 50 * n + 20 * n * n;
 }
 
 export type LevelInfo = {
@@ -45,20 +67,35 @@ export type LevelInfo = {
 
 export function levelInfo(xp: number): LevelInfo {
   let level = 1;
-  while (xpForLevel(level + 1) <= xp) level++;
+  while (level < MAX_LEVEL && xpForLevel(level + 1) <= xp) level++;
 
   const base = xpForLevel(level);
+
+  // Auf dem letzten Rang gibt es nichts mehr zu füllen. Ohne diese Abzweigung
+  // stünde dort „Level 16" ohne Titel und ein Balken, der nie voll wird.
+  if (level >= MAX_LEVEL) {
+    return {
+      level: MAX_LEVEL,
+      title: LEVEL_TITLES[MAX_LEVEL - 1],
+      xp,
+      intoLevel: xp - base,
+      levelSpan: xp - base,
+      progress: 1,
+      nextTitle: null,
+    };
+  }
+
   const next = xpForLevel(level + 1);
   const span = next - base;
 
   return {
     level,
-    title: LEVEL_TITLES[Math.min(level - 1, LEVEL_TITLES.length - 1)],
+    title: LEVEL_TITLES[level - 1],
     xp,
     intoLevel: xp - base,
     levelSpan: span,
     progress: span > 0 ? (xp - base) / span : 1,
-    nextTitle: level < LEVEL_TITLES.length ? LEVEL_TITLES[level] : null,
+    nextTitle: LEVEL_TITLES[level],
   };
 }
 

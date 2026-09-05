@@ -51,9 +51,13 @@ export function StudentBar({
               </span>
               <span
                 className="tabular-nums text-ink-faint"
-                title={`Noch ${Math.max(0, level.levelSpan - level.intoLevel)} XP bis zum nächsten Level`}
+                title={
+                  level.nextTitle
+                    ? `Noch ${Math.max(0, level.levelSpan - level.intoLevel)} XP bis zum nächsten Level`
+                    : "Höchster Rang erreicht"
+                }
               >
-                {level.intoLevel}/{level.levelSpan} XP
+                {level.nextTitle ? `${level.intoLevel}/${level.levelSpan} XP` : "max"}
               </span>
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-line">

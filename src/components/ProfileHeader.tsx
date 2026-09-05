@@ -90,7 +90,9 @@ export function ProfileHeader({
             {level.nextTitle ? `Nächster Rang: ${level.nextTitle}` : "Höchster Rang erreicht"}
           </span>
           <span className="tabular-nums text-ink-faint">
-            noch {Math.max(0, level.levelSpan - level.intoLevel)} XP
+            {level.nextTitle
+              ? `noch ${Math.max(0, level.levelSpan - level.intoLevel)} XP`
+              : `${level.xp} XP gesammelt`}
           </span>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-line">
