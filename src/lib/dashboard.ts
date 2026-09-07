@@ -1,9 +1,9 @@
 import { eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { progress, students } from "@/lib/db/schema";
-import { getCourseCurriculum } from "@/lib/courses";
+import { curriculumXp, getCourseCurriculum } from "@/lib/courses";
 import { getLesson, getStep } from "@/content";
-import { levelInfo } from "@/lib/gamification";
+import { levelInfo, levelScale } from "@/lib/gamification";
 
 export type StudentRow = {
   id: string;
@@ -51,6 +51,9 @@ export async function getCourseDashboard(courseId: string): Promise<CourseDashbo
     0,
   );
 
+  // Die Level-Kurve hängt am Umfang dieses Kurses – einmal berechnen reicht.
+  const scale = levelScale(curriculumXp(curriculum));
+
   const roster = await db.select().from(students).where(eq(students.courseId, courseId));
 
   // Fortschritt aller Kursmitglieder in einem Rutsch holen und zuordnen.
@@ -88,7 +91,7 @@ export async function getCourseDashboard(courseId: string): Promise<CourseDashbo
         (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
       )[0];
 
-      const info = levelInfo(student.xp);
+      const info = levelInfo(student.xp, scale);
 
       return {
         id: student.id,

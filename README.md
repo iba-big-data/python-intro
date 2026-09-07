@@ -31,7 +31,9 @@ Abschlussprojekt. Jede einzelne Aufgabe wird automatisch geprüft.
 **Für Lehrende**
 
 - Kurse mit Name und Kurskennwort anlegen
-- Lektionen pro Kurs einzeln oder kapitelweise auswählen
+- Lektionen pro Kurs einzeln oder kapitelweise auswählen – neue Kurse starten
+  mit einer Standardauswahl aus 39 Must-have-Lektionen, „Alle“ holt den vollen
+  Katalog zurück
 - Live-Dashboard: wer ist wo, wer war heute aktiv
 - „Hier hakt es“: Aufgaben, die im Schnitt die meisten Versuche kosten
 - Kurse archivieren oder löschen
@@ -55,14 +57,25 @@ npm run db:migrate
 npm run dev
 ```
 
+> Die eingebettete Datenbank (PGlite) lässt immer nur einen Prozess an ihren
+> Datenordner. Skripte wie `npm run db:migrate` deshalb bei gestopptem
+> Dev-Server laufen lassen.
+
 Dann im Browser:
 
 - <http://localhost:3000/admin> – Lehrenden-Bereich (Kennwort aus `ADMIN_PASSWORD`)
 - <http://localhost:3000/login> – Studierenden-Anmeldung
 
-Erster Schritt: Im Admin-Bereich einen Kurs anlegen, im Reiter **Lektionen** die
-gewünschten Inhalte anhaken und speichern. Danach können sich Studierende mit
-Kursname und Kennwort anmelden.
+Erster Schritt: Im Admin-Bereich einen Kurs anlegen. Er startet mit der
+**Standardauswahl** – dem Kern, den eine Einführung braucht. Im Reiter
+**Lektionen** lässt sich das nachjustieren: **Standard**, **Alle** oder
+**Leeren** als Ausgangspunkt, dann einzelne Lektionen oder ganze Kapitel
+anhaken und speichern. Danach können sich Studierende mit Kursname und
+Kennwort anmelden.
+
+Die Level-Kurve richtet sich nach dem Umfang des jeweiligen Kurses: Der höchste
+Rang liegt immer bei rund 85 % der erreichbaren XP, egal wie schlank der Kurs
+zugeschnitten ist.
 
 ### Umgebungsvariablen
 

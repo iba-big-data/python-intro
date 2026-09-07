@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { badges, progress, students } from "@/lib/db/schema";
 import { getStudentSession } from "@/lib/auth";
-import { computeBadgeStats, courseHasLesson } from "@/lib/courses";
+import { computeBadgeStats, courseHasLesson, getCourseLevelScale } from "@/lib/courses";
 import { getLesson, getStep, stepXp } from "@/content";
 import {
   BADGES_BY_ID,
@@ -122,13 +122,16 @@ export async function POST(request: Request) {
 
   let earnedXp = 0;
 
+  // Die Level-Schwellen richten sich nach dem Umfang dieses Kurses.
+  const scale = await getCourseLevelScale(session.courseId);
+
   if (newlySolved) {
     // Tipps kosten gestaffelt XP – Hilfe ist erlaubt, aber nicht gratis.
     earnedXp = xpAfterHints(stepXp(step), hintsUsed);
 
-    const before = levelInfo(xp).level;
+    const before = levelInfo(xp, scale).level;
     xp += earnedXp;
-    leveledUp = levelInfo(xp).level > before;
+    leveledUp = levelInfo(xp, scale).level > before;
 
     streakDays = nextStreak(student.lastStreakDay, student.streakDays, localDay);
 
@@ -163,7 +166,7 @@ export async function POST(request: Request) {
     /** XP für genau diesen Step – der Client muss sie nicht aus Summen ableiten */
     earnedXp,
     xp,
-    level: levelInfo(xp),
+    level: levelInfo(xp, scale),
     leveledUp,
     streakDays,
     newBadges: fresh.map((id) => {

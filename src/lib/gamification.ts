@@ -37,19 +37,52 @@ export const LEVEL_TITLES = [
 export const MAX_LEVEL = LEVEL_TITLES.length;
 
 /**
- * Gesamt-XP, die für das Erreichen von Level n nötig sind.
+ * Anteil der Kurs-XP, bei dem der höchste Rang erreicht ist.
  *
- * Die Kurve ist an den Umfang des Katalogs geknüpft: Level 15 liegt bei rund
- * 85 % der insgesamt vergebbaren XP, ein Kurs mit nur den Grundlagenkapiteln
- * kommt auf Level 12. Die frühere Kurve (120n + 40n²) verlangte für Level 15
- * fast doppelt so viele XP, wie der ganze Kurs überhaupt hergibt – die
- * obersten vier Ränge waren damit reine Deko. Alle Schwellen liegen unter den
- * alten, niemand verliert durch die Umstellung ein Level.
+ * Nicht 100 %: Wer den Kurs fast durch hat, soll den letzten Titel auch
+ * tragen dürfen – die letzten Aufgaben sind sonst Pflichtübung ohne Aussicht.
  */
-export function xpForLevel(level: number): number {
-  if (level <= 1) return 0;
+export const TOP_LEVEL_SHARE = 0.85;
+
+/**
+ * Streckfaktor der Level-Kurve für einen Kurs mit `courseXp` vergebbaren XP.
+ *
+ * Die Kurve hängt am Umfang **dieses** Kurses, nicht am vollen Katalog. Vorher
+ * war sie auf alle 13 Kapitel geeicht; ein schlanker Kurs endete damit bei
+ * Level 11 von 15, die obersten Ränge waren für seine Studierenden reine Deko.
+ * Jetzt liegt der höchste Rang in jedem Kurs bei rund 85 % der erreichbaren XP.
+ *
+ * Nebenwirkung, bewusst in Kauf genommen: Werden mitten im Semester Lektionen
+ * nachgeschaltet, steigen die Schwellen mit – rechnerisch kann dabei ein Level
+ * verloren gehen. Der Zuschnitt steht normalerweise vor Kursbeginn.
+ */
+export function levelScale(courseXp: number): number {
+  if (!Number.isFinite(courseXp) || courseXp <= 0) return 1;
+  const raw = (TOP_LEVEL_SHARE * courseXp) / baseXpForLevel(MAX_LEVEL);
+  // Auf zwei Stellen runden: der volle Katalog landet damit exakt auf 1 und
+  // behält seine bisherigen Schwellen, und eine einzelne nachgeschaltete
+  // Lektion verschiebt die Kurve gar nicht erst.
+  return Math.max(0.05, Math.round(raw * 100) / 100);
+}
+
+/** Die ungeskalierte Kurve: flach am Anfang, dann sanft anziehend. */
+function baseXpForLevel(level: number): number {
   const n = level - 1;
   return 50 * n + 20 * n * n;
+}
+
+/**
+ * Gesamt-XP, die für das Erreichen von Level n nötig sind.
+ *
+ * `scale` kommt aus {@link levelScale} und passt die Kurve an den Kursumfang an.
+ * Ohne Angabe gilt die Kurve des vollen Katalogs (dort ist der Faktor ≈ 1).
+ */
+export function xpForLevel(level: number, scale = 1): number {
+  if (level <= 1) return 0;
+  const n = level - 1;
+  // Auf 5 runden, damit die Schwellen lesbar bleiben – aber nie enger als
+  // 5 XP pro Level, sonst fallen in einem Mini-Kurs mehrere Ränge zusammen.
+  return Math.max(5 * n, Math.round((baseXpForLevel(level) * scale) / 5) * 5);
 }
 
 export type LevelInfo = {
@@ -65,11 +98,11 @@ export type LevelInfo = {
   nextTitle: string | null;
 };
 
-export function levelInfo(xp: number): LevelInfo {
+export function levelInfo(xp: number, scale = 1): LevelInfo {
   let level = 1;
-  while (level < MAX_LEVEL && xpForLevel(level + 1) <= xp) level++;
+  while (level < MAX_LEVEL && xpForLevel(level + 1, scale) <= xp) level++;
 
-  const base = xpForLevel(level);
+  const base = xpForLevel(level, scale);
 
   // Auf dem letzten Rang gibt es nichts mehr zu füllen. Ohne diese Abzweigung
   // stünde dort „Level 16" ohne Titel und ein Balken, der nie voll wird.
@@ -85,7 +118,7 @@ export function levelInfo(xp: number): LevelInfo {
     };
   }
 
-  const next = xpForLevel(level + 1);
+  const next = xpForLevel(level + 1, scale);
   const span = next - base;
 
   return {

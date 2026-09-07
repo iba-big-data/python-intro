@@ -18,6 +18,7 @@ export function CourseTabs({
   courseId,
   chapters,
   selection,
+  defaultSelection,
   dashboard,
   course,
 }: {
@@ -25,6 +26,7 @@ export function CourseTabs({
   courseId: string;
   chapters: PickerChapter[];
   selection: string[];
+  defaultSelection: string[];
   dashboard: DashboardData;
   course: { id: string; name: string; description: string | null; archived: boolean };
 }) {
@@ -55,7 +57,12 @@ export function CourseTabs({
       </div>
 
       {tab === "lektionen" && (
-        <LessonPicker courseId={courseId} chapters={chapters} initialSelection={selection} />
+        <LessonPicker
+          courseId={courseId}
+          chapters={chapters}
+          initialSelection={selection}
+          defaultSelection={defaultSelection}
+        />
       )}
       {tab === "fortschritt" && <CourseDashboard data={dashboard} />}
       {tab === "einstellungen" && <CourseSettings course={course} />}

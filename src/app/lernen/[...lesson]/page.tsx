@@ -46,6 +46,7 @@ export default async function LessonPage({
       solvedStepIds={solvedStepIds}
       hintsUsedByStep={hintsUsedByStep}
       nextLessonId={next}
+      levelScale={overview.levelScale}
       student={{
         nickname: overview.student.nickname,
         avatar: overview.student.avatar,

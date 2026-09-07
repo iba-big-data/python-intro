@@ -4,7 +4,13 @@ import { badges, courseLessons, courses, progress, students } from "@/lib/db/sch
 import { chapters, getChapterOfLesson, getLesson } from "@/content";
 import { stepXp } from "@/content/types";
 import type { Chapter, Lesson } from "@/content/types";
-import { type BadgeStats, levelInfo, todayKey, xpAfterHints } from "@/lib/gamification";
+import {
+  type BadgeStats,
+  levelInfo,
+  levelScale,
+  todayKey,
+  xpAfterHints,
+} from "@/lib/gamification";
 
 /** Reihenfolge, in der ein Kapitel im Katalog steht – für stabile Sortierung. */
 const catalogOrder = new Map<string, number>();
@@ -69,6 +75,29 @@ export async function setCourseLessons(courseId: string, lessonIds: string[]): P
 }
 
 /* ------------------------------------------------------------------ *
+ *  Kursumfang – Bezugsgröße für die Level-Kurve
+ * ------------------------------------------------------------------ */
+
+/** Alle XP, die in den freigeschalteten Lektionen zu holen sind. */
+export function curriculumXp(curriculum: CourseChapter[]): number {
+  return curriculum.reduce(
+    (sum, chapter) =>
+      sum +
+      chapter.lessons.reduce(
+        (lessonSum, lesson) =>
+          lessonSum + lesson.steps.reduce((stepSum, step) => stepSum + stepXp(step), 0),
+        0,
+      ),
+    0,
+  );
+}
+
+/** Streckfaktor der Level-Kurve für diesen Kurs – siehe `levelScale`. */
+export async function getCourseLevelScale(courseId: string): Promise<number> {
+  return levelScale(curriculumXp(await getCourseCurriculum(courseId)));
+}
+
+/* ------------------------------------------------------------------ *
  *  Fortschritt einer studierenden Person
  * ------------------------------------------------------------------ */
 export type StepProgress = {
@@ -86,6 +115,8 @@ export type StudentOverview = {
   solvedByLesson: Record<string, number>;
   earnedBadges: string[];
   level: ReturnType<typeof levelInfo>;
+  /** Streckfaktor der Level-Kurve – der Client rechnet damit weiter */
+  levelScale: number;
   /** zuletzt bearbeitete Lektion – der Einstiegspunkt für „weitermachen" */
   lastLessonId: string | null;
 };
@@ -130,6 +161,8 @@ export async function getStudentOverview(
   const lastLessonId =
     recent[0] && inCourse.has(recent[0].lessonId) ? recent[0].lessonId : null;
 
+  const scale = levelScale(curriculumXp(curriculum));
+
   return {
     student,
     course,
@@ -137,7 +170,8 @@ export async function getStudentOverview(
     progressByStep,
     solvedByLesson,
     earnedBadges: badgeRows.map((row) => row.badgeId),
-    level: levelInfo(student.xp),
+    level: levelInfo(student.xp, scale),
+    levelScale: scale,
     lastLessonId,
   };
 }

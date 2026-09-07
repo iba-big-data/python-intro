@@ -32,6 +32,12 @@ export type LessonViewProps = {
   hintsUsedByStep: Record<string, number>;
   nextLessonId: string | null;
   student: { nickname: string; avatar: string; xp: number; streakDays: number };
+  /**
+   * Streckfaktor der Level-Kurve für diesen Kurs. Nach jeder Lösung liefert die
+   * API das fertig gerechnete Level; gebraucht wird der Faktor für den ersten
+   * Stand, bevor überhaupt etwas gemeldet wurde.
+   */
+  levelScale: number;
 };
 
 /** Was der Python-Checker über einen Step wissen muss. */
@@ -84,6 +90,7 @@ export function LessonView({
   hintsUsedByStep,
   nextLessonId,
   student,
+  levelScale,
 }: LessonViewProps) {
   const python = usePython();
 
@@ -105,7 +112,7 @@ export function LessonView({
 
   const [xp, setXp] = useState(student.xp);
   const [streak, setStreak] = useState(student.streakDays);
-  const [level, setLevel] = useState<LevelInfo>(() => levelInfo(student.xp));
+  const [level, setLevel] = useState<LevelInfo>(() => levelInfo(student.xp, levelScale));
   const [reward, setReward] = useState<Reward | null>(null);
   const [xpToast, setXpToast] = useState<number | null>(null);
 

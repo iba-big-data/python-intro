@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { ArrowLeft } from "lucide-react";
 import { db } from "@/lib/db";
 import { courses } from "@/lib/db/schema";
-import { chapters } from "@/content";
+import { chapters, defaultLessonIds } from "@/content";
 import { getCourseLessonIds } from "@/lib/courses";
 import { getCourseDashboard } from "@/lib/dashboard";
 import { AdminBar } from "@/components/admin/AdminBar";
@@ -73,6 +73,7 @@ export default async function CoursePage({
           courseId={course.id}
           chapters={pickerChapters}
           selection={selection}
+          defaultSelection={defaultLessonIds}
           dashboard={dashboard}
           course={{
             id: course.id,

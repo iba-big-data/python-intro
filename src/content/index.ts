@@ -60,6 +60,79 @@ export function getStep(lessonId: string, stepId: string): Step | undefined {
 /** Alle gültigen Lektions-IDs – für die Admin-Auswahl und zum Validieren. */
 export const lessonIds: string[] = allLessons.map((lesson) => lesson.id);
 
+/**
+ * Standardauswahl: der Kern, den eine Einführung wirklich braucht.
+ *
+ * Der volle Katalog ist ein Semester lang. Diese Auswahl streicht rund ein
+ * Drittel der Lektionen und die Hälfte der Zeit, ohne ein Thema ganz fallen zu
+ * lassen: Was wegfällt, sind Übungsblöcke mit demselben Muster (Kapitel 4 und
+ * 10), reiner Nachschlagestoff, Sonderfälle – und das Abschlussprojekt, das als
+ * Kür ohnehin nur ganz oder gar nicht sinnvoll ist.
+ *
+ * Gestrichen heißt nicht gelöscht: im Lehrenden-Bereich holt „Alle" jede
+ * Lektion mit einem Klick zurück.
+ */
+const DEFAULT_SELECTION = [
+  // Kapitel 1–3: der Einstieg, praktisch unverändert
+  "shell/einstieg",
+  "strings/einstieg",
+  "strings/addieren",
+  "variablen/einfuehrung",
+  "variablen/verwenden",
+  "variablen/programme",
+  "variablen/berechnungen-speichern",
+  // Kapitel 4: Schleifen ohne den großen Muster-Übungsblock
+  "schleifen/einfuehrung",
+  "schleifen/einrueckung",
+  "schleifen/erste-uebungen",
+  "schleifen/strings-aufbauen",
+  // Kapitel 5: vollständig – an Bedingungen ist nichts entbehrlich
+  "bedingungen/einfuehrung",
+  "bedingungen/verschachteln",
+  "bedingungen/nachvollziehen",
+  "bedingungen/else",
+  "bedingungen/gleichheit",
+  "bedingungen/elif",
+  "bedingungen/vergleiche",
+  // Kapitel 6: Kern der Listen, ohne Drill, Begriffskunde und Sonderfälle
+  "listen/einfuehrung",
+  "listen/neue-listen",
+  "listen/break",
+  "listen/index",
+  "listen/methoden",
+  "listen/mehr-funktionen",
+  "listen/hilfe-finden",
+  // Kapitel 7: f-Strings ja, Anführungszeichen-Sonderfälle nein
+  "strings-fortgeschritten/f-strings",
+  // Kapitel 8: definieren, aufrufen, zurückgeben
+  "funktionen/definieren",
+  "funktionen/verschachteln",
+  "funktionen/rueckgabe",
+  // Kapitel 9: and, or, not – ohne Vorrang- und Formatierungsfeinheiten
+  "boolesche-operatoren/oder",
+  "boolesche-operatoren/und",
+  "boolesche-operatoren/nicht",
+  // Kapitel 10–12: der Datenteil, ohne die beiden großen Übungsblöcke
+  "numpy/grundlagen",
+  "numpy/fortgeschritten",
+  "numpy/matrizen",
+  "pandas/grundlagen",
+  "pandas/operationen",
+  "pandas/echter-datensatz",
+  "sklearn/erstes-modell",
+];
+
+export const defaultLessonIds: string[] = DEFAULT_SELECTION.filter((id) => lessonById.has(id));
+
+// Wird eine Lektion umbenannt, fällt sie sonst stillschweigend aus der
+// Standardauswahl – und niemand merkt es, bis ein Kurs sie vermisst.
+if (process.env.NODE_ENV !== "production") {
+  const unknown = DEFAULT_SELECTION.filter((id) => !lessonById.has(id));
+  if (unknown.length > 0) {
+    console.warn(`Standardauswahl kennt unbekannte Lektionen: ${unknown.join(", ")}`);
+  }
+}
+
 export const totalSteps = allLessons.reduce((sum, lesson) => sum + lesson.steps.length, 0);
 
 export * from "./types";

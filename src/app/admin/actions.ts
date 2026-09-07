@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { courses } from "@/lib/db/schema";
 import { hashPassword, isAdmin, slugify } from "@/lib/auth";
 import { setCourseLessons } from "@/lib/courses";
+import { defaultLessonIds } from "@/content";
 
 async function requireAdmin() {
   if (!(await isAdmin())) throw new Error("Nicht berechtigt.");
@@ -41,6 +42,11 @@ export async function createCourse(formData: FormData): Promise<ActionResult> {
     .insert(courses)
     .values({ name, slug, description, passwordHash: await hashPassword(password) })
     .returning();
+
+  // Ein neuer Kurs startet mit den Must-have-Lektionen statt mit einer leeren
+  // Liste: so sehen Studierende sofort etwas, und die Feinauswahl bleibt eine
+  // Korrektur statt einer Pflichtaufgabe vor dem ersten Login.
+  await setCourseLessons(course.id, defaultLessonIds);
 
   revalidatePath("/admin");
   return { ok: true, id: course.id };

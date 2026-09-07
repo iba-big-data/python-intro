@@ -33,10 +33,13 @@ export function LessonPicker({
   courseId,
   chapters,
   initialSelection,
+  defaultSelection,
 }: {
   courseId: string;
   chapters: PickerChapter[];
   initialSelection: string[];
+  /** Die Must-have-Auswahl – Vorgabe für neue Kurse, hier per Klick abrufbar */
+  defaultSelection: string[];
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set(initialSelection));
   const [open, setOpen] = useState<Set<string>>(new Set(chapters.map((c) => c.id)));
@@ -49,6 +52,29 @@ export function LessonPicker({
     for (const id of selected) if (!initial.has(id)) return true;
     return false;
   }, [selected, initialSelection]);
+
+  const allIds = useMemo(
+    () => chapters.flatMap((chapter) => chapter.lessons.map((lesson) => lesson.id)),
+    [chapters],
+  );
+
+  /** Welcher der drei Schalter beschreibt die aktuelle Auswahl? */
+  const preset: "standard" | "alle" | "leer" | null = useMemo(() => {
+    if (selected.size === 0) return "leer";
+    if (selected.size === allIds.length) return "alle";
+    if (
+      selected.size === defaultSelection.length &&
+      defaultSelection.every((id) => selected.has(id))
+    ) {
+      return "standard";
+    }
+    return null;
+  }, [selected, allIds, defaultSelection]);
+
+  function applyPreset(ids: string[]) {
+    setSaved(false);
+    setSelected(new Set(ids));
+  }
 
   function toggleLesson(id: string) {
     setSaved(false);
@@ -93,18 +119,29 @@ export function LessonPicker({
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={() =>
-              setSelected(
-                selected.size === 0
-                  ? new Set(chapters.flatMap((c) => c.lessons.map((l) => l.id)))
-                  : new Set(),
-              )
-            }
-            className="text-xs text-ink-faint underline-offset-4 transition hover:text-ink-dim hover:underline"
-          >
-            {selected.size === 0 ? "Alle auswählen" : "Auswahl leeren"}
-          </button>
+          <div className="flex items-center overflow-hidden rounded-lg border border-line text-xs">
+            {(
+              [
+                ["standard", "Standard", defaultSelection, "Nur die Must-have-Lektionen"],
+                ["alle", "Alle", allIds, "Den kompletten Katalog auswählen"],
+                ["leer", "Leeren", [], "Auswahl komplett leeren"],
+              ] as const
+            ).map(([key, label, ids, hint], position) => (
+              <button
+                key={key}
+                onClick={() => applyPreset([...ids])}
+                title={hint}
+                aria-pressed={preset === key}
+                className={`px-3 py-1.5 transition ${position > 0 ? "border-l border-line" : ""} ${
+                  preset === key
+                    ? "bg-cyan/15 font-medium text-cyan"
+                    : "text-ink-faint hover:bg-surface/60 hover:text-ink-dim"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
           <button
             onClick={save}
