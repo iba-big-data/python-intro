@@ -5,11 +5,16 @@ import { useRouter } from "next/navigation";
 import { Loader2, Plus, Sparkles } from "lucide-react";
 import { createCourse } from "@/app/admin/actions";
 
-/** Erzeugt ein leicht merkbares, aber nicht triviales Kennwort. */
+/**
+ * Erzeugt ein leicht merkbares, aber nicht triviales Kennwort.
+ *
+ * Vier Ziffern statt drei: seit die Anmeldung ohne Kursnamen auskommt, ist das
+ * Kennwort der einzige Schutz des Kurses.
+ */
 function suggestPassword(): string {
   const words = ["python", "loop", "array", "syntax", "logik", "byte", "index", "lambda"];
   const word = words[Math.floor(Math.random() * words.length)];
-  return `${word}-${Math.floor(100 + Math.random() * 900)}`;
+  return `${word}-${Math.floor(1000 + Math.random() * 9000)}`;
 }
 
 export function NewCourseForm() {
@@ -63,7 +68,8 @@ export function NewCourseForm() {
             className="w-full rounded-xl border border-line bg-abyss px-4 py-3 outline-none transition placeholder:text-ink-faint focus:border-cyan focus:ring-2 focus:ring-cyan/20"
           />
           <span className="mt-1.5 block text-xs text-ink-faint">
-            Diesen Namen geben die Studierenden beim Anmelden ein. Groß-/Kleinschreibung ist egal.
+            Nur zur Orientierung für dich und im Profil der Studierenden. Angemeldet wird sich
+            allein mit dem Kennwort.
           </span>
         </label>
 
@@ -87,7 +93,8 @@ export function NewCourseForm() {
             </button>
           </div>
           <span className="mt-1.5 block text-xs text-ink-faint">
-            Gib dieses Kennwort an deine Gruppe weiter. Du kannst es jederzeit ändern.
+            Das ist der komplette Zugang: Studierende geben nur dieses Kennwort ein. Es muss sich
+            deshalb von dem aller anderen Kurse unterscheiden. Mindestens 8 Zeichen.
           </span>
         </label>
 

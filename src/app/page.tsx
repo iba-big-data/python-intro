@@ -69,7 +69,7 @@ export default function LandingPage() {
             <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
           </Link>
           <p className="text-sm text-ink-faint">
-            Du brauchst nur Kursname und Kennwort von deiner Lehrperson.
+            Du brauchst nur das Kurskennwort von deiner Lehrperson.
           </p>
         </div>
       </section>

@@ -4,7 +4,11 @@ import { cookies } from "next/headers";
 export const STUDENT_COOKIE = "pq_student";
 export const ADMIN_COOKIE = "pq_admin";
 
-const SESSION_DAYS = 30;
+// Ein Semester ist länger als 30 Tage, und das Cookie ist der einzige Weg
+// zurück zum eigenen Fortschritt. Es wird bei jedem gespeicherten Fortschritt
+// erneuert (siehe touchStudentSession), die Frist läuft also ab dem letzten
+// Lernen statt ab der Anmeldung.
+const SESSION_DAYS = 180;
 
 function secret(): Uint8Array {
   const value = process.env.SESSION_SECRET;
@@ -114,9 +118,9 @@ export async function getStudentSession(): Promise<StudentSession | null> {
   return verifyToken<StudentSession>(store.get(STUDENT_COOKIE)?.value);
 }
 
-export async function clearStudentSession(): Promise<void> {
-  const store = await cookies();
-  store.delete(STUDENT_COOKIE);
+/** Verlängert die Laufzeit des Cookies – bei jedem Lebenszeichen aufrufen. */
+export async function touchStudentSession(session: StudentSession): Promise<void> {
+  await setStudentSession(session);
 }
 
 export async function setAdminSession(): Promise<void> {
@@ -135,7 +139,51 @@ export async function clearAdminSession(): Promise<void> {
   store.delete(ADMIN_COOKIE);
 }
 
-/** Kursnamen für Login-Vergleich und URL normalisieren */
+/* ------------------------------------------------------------------ *
+ *  Wiederherstellungscode
+ *
+ *  Zweiter Schlüssel zum eigenen Fortschritt, gedacht zum Abschreiben:
+ *  zwei Wörter und sechs Zeichen, z. B. "lila-otter-7f3k92". Im zufälligen
+ *  Teil fehlen 0/o/1/l/i – die verwechselt man beim Abtippen zu leicht.
+ * ------------------------------------------------------------------ */
+const CODE_ADJECTIVES = [
+  "lila", "flink", "leise", "wach", "rund", "hell", "kuehn", "mild",
+  "warm", "klar", "weit", "sanft", "froh", "keck", "fein", "zart",
+];
+const CODE_NOUNS = [
+  "otter", "birke", "komet", "anker", "feder", "kiesel", "tulpe", "wolke",
+  "raupe", "harfe", "muschel", "distel", "kranich", "quelle", "nebel", "funke",
+];
+const CODE_CHARS = "23456789abcdefghjkmnpqrstuvwxyz";
+
+function pick<T>(list: T[], random: Uint32Array, index: number): T {
+  return list[random[index] % list.length];
+}
+
+export function generateRecoveryCode(): string {
+  const random = crypto.getRandomValues(new Uint32Array(8));
+  let tail = "";
+  for (let i = 0; i < 6; i++) {
+    tail += CODE_CHARS[random[i + 2] % CODE_CHARS.length];
+  }
+  return `${pick(CODE_ADJECTIVES, random, 0)}-${pick(CODE_NOUNS, random, 1)}-${tail}`;
+}
+
+/**
+ * Räumt einen abgetippten Code auf: Groß-/Kleinschreibung, Leerzeichen und
+ * versehentliche Sonderzeichen sollen niemanden aussperren.
+ */
+export function normaliseRecoveryCode(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** Kurs- und Anzeigenamen für Vergleich und Sortierung normalisieren */
 export function slugify(value: string): string {
   return value
     .trim()

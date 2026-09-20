@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { AlertTriangle, Flame, RefreshCw, Users, Zap } from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
+import { AlertTriangle, Eraser, Flame, Loader2, RefreshCw, Users, Zap } from "lucide-react";
 import type { CourseDashboard as DashboardData } from "@/lib/dashboard";
+import { removeGhostStudents } from "@/app/admin/actions";
 
 function timeAgo(date: Date | string): string {
   const then = typeof date === "string" ? new Date(date) : date;
@@ -18,9 +19,10 @@ function timeAgo(date: Date | string): string {
   return `vor ${days} Tagen`;
 }
 
-export function CourseDashboard({ data }: { data: DashboardData }) {
+export function CourseDashboard({ courseId, data }: { courseId: string; data: DashboardData }) {
   const router = useRouter();
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [cleaning, startCleaning] = useTransition();
 
   // Live-Ansicht: alle 30 Sekunden neu laden, solange die Seite offen ist.
   useEffect(() => {
@@ -35,8 +37,8 @@ export function CourseDashboard({ data }: { data: DashboardData }) {
         <div className="mb-3 text-4xl">👋</div>
         <h3 className="font-semibold">Noch niemand angemeldet</h3>
         <p className="mt-2 text-sm text-ink-dim">
-          Sobald sich die ersten Studierenden mit Kursname und Kennwort anmelden, siehst du hier
-          ihren Fortschritt in Echtzeit.
+          Sobald sich die ersten Studierenden mit dem Kurskennwort anmelden, siehst du hier ihren
+          Fortschritt in Echtzeit.
         </p>
       </div>
     );
@@ -97,6 +99,30 @@ export function CourseDashboard({ data }: { data: DashboardData }) {
             ))}
           </div>
         </section>
+      )}
+
+      {data.ghosts > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface/40 px-4 py-3">
+          <p className="flex-1 text-sm text-ink-dim">
+            {data.ghosts === 1
+              ? "Ein Profil hat noch keine einzige Aufgabe bearbeitet und ist seit über einem Tag still."
+              : `${data.ghosts} Profile haben noch keine einzige Aufgabe bearbeitet und sind seit über einem Tag still.`}{" "}
+            Meist steckt eine doppelte Anmeldung dahinter.
+          </p>
+          <button
+            onClick={() =>
+              startCleaning(async () => {
+                await removeGhostStudents(courseId);
+                router.refresh();
+              })
+            }
+            disabled={cleaning}
+            className="flex shrink-0 items-center gap-2 rounded-xl border border-line px-4 py-2 text-sm transition hover:border-cyan hover:text-cyan disabled:opacity-60"
+          >
+            {cleaning ? <Loader2 className="size-3.5 animate-spin" /> : <Eraser className="size-3.5" />}
+            Aufräumen
+          </button>
+        </div>
       )}
 
       <section>

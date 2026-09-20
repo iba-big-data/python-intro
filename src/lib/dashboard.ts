@@ -37,6 +37,8 @@ export type CourseDashboard = {
   stuckSteps: StuckStep[];
   totalSteps: number;
   activeToday: number;
+  /** Profile ohne jede Aufgabe, seit über einem Tag still – siehe removeGhostStudents */
+  ghosts: number;
 };
 
 /**
@@ -77,7 +79,9 @@ export async function getCourseDashboard(courseId: string): Promise<CourseDashbo
   }
 
   const today = new Date().toISOString().slice(0, 10);
+  const ghostCutoff = Date.now() - 24 * 60 * 60 * 1000;
   let activeToday = 0;
+  let ghosts = 0;
 
   const studentRows: StudentRow[] = roster
     .map((student) => {
@@ -85,6 +89,9 @@ export async function getCourseDashboard(courseId: string): Promise<CourseDashbo
       const solved = entries.filter((entry) => entry.solved);
 
       if (student.lastActiveAt.toISOString().slice(0, 10) === today) activeToday++;
+      if (entries.length === 0 && student.xp === 0 && student.lastActiveAt.getTime() < ghostCutoff) {
+        ghosts++;
+      }
 
       // aktuelle Lektion = die letzte, an der gearbeitet wurde
       const latest = [...entries].sort(
@@ -150,7 +157,7 @@ export async function getCourseDashboard(courseId: string): Promise<CourseDashbo
     .sort((a, b) => b.averageAttempts - a.averageAttempts || b.learners - a.learners)
     .slice(0, 8);
 
-  return { students: studentRows, stuckSteps, totalSteps, activeToday };
+  return { students: studentRows, stuckSteps, totalSteps, activeToday, ghosts };
 }
 
 /** Prüft, ob eine Step-ID im Katalog eine Übung ist – für die Dashboard-Beschriftung. */

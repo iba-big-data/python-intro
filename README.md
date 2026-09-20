@@ -38,9 +38,16 @@ Abschlussprojekt. Jede einzelne Aufgabe wird automatisch geprüft.
 - „Hier hakt es“: Aufgaben, die im Schnitt die meisten Versuche kosten
 - Kurse archivieren oder löschen
 
-**Anmeldung ohne Benutzerkonten.** Studierende geben Kursname, Kurskennwort und
-einen selbstgewählten Anzeigenamen ein. Es werden keine E-Mail-Adressen und keine
-personenbezogenen Daten über den Anzeigenamen hinaus erhoben.
+**Anmeldung ohne Benutzerkonten.** Studierende geben einmal das Kurskennwort und
+einen selbstgewählten Anzeigenamen ein – mehr nicht. Es werden keine
+E-Mail-Adressen und keine personenbezogenen Daten über den Anzeigenamen hinaus
+erhoben.
+
+Danach hängt der Fortschritt an einem signierten Cookie (180 Tage, verlängert
+sich bei jeder gelösten Aufgabe). Wer den Browser wechselt oder seine Cookies
+löscht, kommt über den **Wiederherstellungscode** aus dem Profil wieder an
+seinen Stand. Ein Kennwort für die eigene Person gibt es bewusst nicht: Der
+Kurs soll ohne Kontoverwaltung auskommen.
 
 ---
 
@@ -70,8 +77,10 @@ Erster Schritt: Im Admin-Bereich einen Kurs anlegen. Er startet mit der
 **Standardauswahl** – dem Kern, den eine Einführung braucht. Im Reiter
 **Lektionen** lässt sich das nachjustieren: **Standard**, **Alle** oder
 **Leeren** als Ausgangspunkt, dann einzelne Lektionen oder ganze Kapitel
-anhaken und speichern. Danach können sich Studierende mit Kursname und
-Kennwort anmelden.
+anhaken und speichern. Danach können sich Studierende allein mit dem
+Kurskennwort anmelden – gib es deiner Gruppe weiter. Es muss sich vom Kennwort
+aller anderen Kurse unterscheiden, denn es ist das Einzige, was die Anmeldung
+abfragt.
 
 Die Level-Kurve richtet sich nach dem Umfang des jeweiligen Kurses: Der höchste
 Rang liegt immer bei rund 85 % der erreichbaren XP, egal wie schlank der Kurs

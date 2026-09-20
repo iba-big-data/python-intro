@@ -8,6 +8,7 @@ import { StudentBar } from "@/components/StudentBar";
 import { BadgeShelf } from "@/components/BadgeShelf";
 import { ProfileHeader } from "@/components/ProfileHeader";
 import { ProfileStatsGrid } from "@/components/ProfileStatsGrid";
+import { RecoveryCodeCard } from "@/components/RecoveryCodeCard";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +74,8 @@ export default async function ProfilePage() {
             earned={earnedBadges}
           />
         </div>
+
+        <RecoveryCodeCard code={student.recoveryCode} />
       </main>
     </div>
   );

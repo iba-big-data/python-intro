@@ -141,7 +141,7 @@ async function main() {
   const { badges, courseLessons, courses, progress, students } = await import(
     "../src/lib/db/schema"
   );
-  const { hashPassword, slugify } = await import("../src/lib/auth");
+  const { generateRecoveryCode, hashPassword, slugify } = await import("../src/lib/auth");
   const { computeBadgeStats, getCourseCurriculum, setCourseLessons } = await import(
     "../src/lib/courses"
   );
@@ -230,6 +230,7 @@ async function main() {
         courseId: course.id,
         nickname: persona.nickname,
         nicknameKey: slugify(persona.nickname),
+        recoveryCode: generateRecoveryCode(),
         avatar: persona.avatar,
         createdAt,
         lastActiveAt,
@@ -363,15 +364,17 @@ async function main() {
       `✓ ${persona.avatar} ${persona.nickname.padEnd(6)} ` +
         `Level ${String(info.level).padStart(2)} (${info.title}) · ` +
         `${String(xp).padStart(4)} XP · ${String(solvedSteps).padStart(3)} Steps · ` +
-        `${earned.length} Abzeichen · ${positionLabel}`,
+        `${earned.length} Abzeichen · ${positionLabel}\n` +
+        `  Code zum Hineinschlüpfen: ${student.recoveryCode}`,
     );
   }
 
   console.log(
     `\nAnmeldung als Studierende auf /login:\n` +
-      `  Kurs: ${COURSE_NAME}\n` +
       `  Kennwort: ${COURSE_PASSWORD}\n` +
-      `  Anzeigename: einer der Namen oben (z. B. Mira) – Groß-/Kleinschreibung egal\n\n` +
+      `  Anzeigename: frei wählbar – dafür entsteht ein neues, leeres Profil.\n\n` +
+      `Um in eines der Profile oben zu schlüpfen: auf /login unten auf\n` +
+      `"Ich war schon dabei" klicken und den Code hinter dem Namen eingeben.\n\n` +
       `Lehrenden-Ansicht unter /admin (Kennwort aus ADMIN_PASSWORD).`,
   );
 }

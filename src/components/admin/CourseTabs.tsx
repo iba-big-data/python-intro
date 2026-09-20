@@ -64,7 +64,7 @@ export function CourseTabs({
           defaultSelection={defaultSelection}
         />
       )}
-      {tab === "fortschritt" && <CourseDashboard data={dashboard} />}
+      {tab === "fortschritt" && <CourseDashboard courseId={courseId} data={dashboard} />}
       {tab === "einstellungen" && <CourseSettings course={course} />}
     </div>
   );

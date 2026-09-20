@@ -1,6 +1,8 @@
 import { and, asc, desc, eq, gt, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { badges, courseLessons, courses, progress, students } from "@/lib/db/schema";
+import type { Course } from "@/lib/db/schema";
+import { verifyPassword } from "@/lib/auth";
 import { chapters, getChapterOfLesson, getLesson } from "@/content";
 import { stepXp } from "@/content/types";
 import type { Chapter, Lesson } from "@/content/types";
@@ -19,6 +21,34 @@ chapters.forEach((chapter, chapterIndex) => {
     catalogOrder.set(lesson.id, chapterIndex * 1000 + lessonIndex);
   });
 });
+
+/**
+ * Findet den Kurs zu einem Kennwort – ohne Kursnamen, denn den geben
+ * Studierende nicht mehr ein.
+ *
+ * Die Kennwörter sind gesalzen gehasht, man kann also nicht danach suchen,
+ * sondern muss sie der Reihe nach prüfen. Bei der Größenordnung eines
+ * Lehrstuhls (eine Handvoll Kurse) ist das nur beim Anmelden spürbar.
+ *
+ * `includeArchived` ist für die Dublettenprüfung im Admin gedacht: dort soll
+ * auch ein pausierter Kurs ein Kennwort blockieren.
+ */
+export async function findCourseByPassword(
+  password: string,
+  { includeArchived = false } = {},
+): Promise<Course | null> {
+  if (!password) return null;
+
+  const candidates = await db
+    .select()
+    .from(courses)
+    .where(includeArchived ? undefined : eq(courses.archived, false));
+
+  for (const course of candidates) {
+    if (await verifyPassword(password, course.passwordHash)) return course;
+  }
+  return null;
+}
 
 export type CourseChapter = Chapter & { lessons: Lesson[] };
 

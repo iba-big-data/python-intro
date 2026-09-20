@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Flame, LogOut, Zap } from "lucide-react";
+import { Flame, Zap } from "lucide-react";
 import type { LevelInfo } from "@/lib/gamification";
 
 /** Kopfzeile des Lernbereichs: Identität, Level-Fortschritt, Streak. */
@@ -15,12 +15,6 @@ export function StudentBar({
   level: LevelInfo;
   courseName: string;
 }) {
-
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    window.location.assign("/");
-  }
-
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-void/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-3xl items-center gap-4 px-6 py-3">
@@ -83,14 +77,6 @@ export function StudentBar({
           >
             {student.avatar}
           </Link>
-
-          <button
-            onClick={logout}
-            title="Abmelden"
-            className="rounded-lg p-2 text-ink-faint transition hover:bg-surface hover:text-ink"
-          >
-            <LogOut className="size-4" />
-          </button>
         </div>
       </div>
     </header>

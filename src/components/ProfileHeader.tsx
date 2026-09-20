@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { motion } from "motion/react";
-import { Check, Flame, Loader2, Pencil } from "lucide-react";
+import { Check, Flame, Loader2, Pencil, X } from "lucide-react";
 import type { LevelInfo } from "@/lib/gamification";
 import { AVATARS } from "@/lib/avatars";
 
@@ -23,6 +23,9 @@ export function ProfileHeader({
   const [picking, setPicking] = useState(false);
   const [saving, startSaving] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  const [name, setName] = useState(nickname);
+  const [draft, setDraft] = useState<string | null>(null);
 
   function choose(next: string) {
     if (next === current) {
@@ -50,6 +53,34 @@ export function ProfileHeader({
     });
   }
 
+  function saveName(event: React.FormEvent) {
+    event.preventDefault();
+    const next = (draft ?? "").trim();
+
+    if (!next || next === name) {
+      setDraft(null);
+      return;
+    }
+
+    setError(null);
+    startSaving(async () => {
+      const response = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nickname: next }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error ?? "Konnte nicht gespeichert werden. Nochmal versuchen?");
+        return;
+      }
+
+      setName(next);
+      setDraft(null);
+    });
+  }
+
   return (
     <section>
       <div className="flex flex-wrap items-center gap-5">
@@ -67,7 +98,47 @@ export function ProfileHeader({
         </div>
 
         <div className="min-w-0">
-          <h1 className="text-3xl font-bold tracking-tight">{nickname}</h1>
+          {draft === null ? (
+            <button
+              onClick={() => setDraft(name)}
+              title="Namen ändern"
+              className="group flex items-center gap-2 text-left"
+            >
+              <h1 className="text-3xl font-bold tracking-tight">{name}</h1>
+              <Pencil className="size-3.5 shrink-0 text-ink-faint opacity-0 transition group-hover:opacity-100" />
+            </button>
+          ) : (
+            <form onSubmit={saveName} className="flex items-center gap-2">
+              <input
+                value={draft}
+                autoFocus
+                maxLength={32}
+                onChange={(event) => setDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") setDraft(null);
+                }}
+                aria-label="Anzeigename"
+                className="w-52 rounded-xl border border-line bg-abyss px-3 py-1.5 text-xl font-bold outline-none transition focus:border-neon focus:ring-2 focus:ring-neon/20"
+              />
+              <button
+                type="submit"
+                disabled={saving}
+                aria-label="Namen speichern"
+                className="rounded-lg border border-line p-2 text-ink-faint transition hover:border-neon/60 hover:text-neon disabled:opacity-50"
+              >
+                {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => setDraft(null)}
+                aria-label="Abbrechen"
+                className="rounded-lg border border-line p-2 text-ink-faint transition hover:text-ink"
+              >
+                <X className="size-3.5" />
+              </button>
+            </form>
+          )}
+
           <p className="text-sm text-ink-dim">{courseName}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className="rounded-full border border-neon/30 bg-neon/10 px-3 py-1 text-xs font-medium text-neon">
@@ -105,6 +176,8 @@ export function ProfileHeader({
         </div>
       </div>
 
+      {error && <p className="mt-3 text-sm text-rose">{error}</p>}
+
       {picking && (
         <motion.div
           initial={{ opacity: 0, y: -8 }}
@@ -131,7 +204,6 @@ export function ProfileHeader({
               </button>
             ))}
           </div>
-          {error && <p className="mt-3 text-sm text-rose">{error}</p>}
         </motion.div>
       )}
     </section>

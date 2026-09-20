@@ -17,9 +17,9 @@ export const courses = pgTable(
   "courses",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    /** Anzeigename, mit dem sich Studierende anmelden */
+    /** Anzeigename des Kurses – zur Orientierung, nicht für die Anmeldung */
     name: text("name").notNull(),
-    /** kleingeschriebene, normalisierte Fassung von name – für den Login */
+    /** kleingeschriebene, normalisierte Fassung von name – hält Kursnamen eindeutig */
     slug: text("slug").notNull(),
     passwordHash: text("password_hash").notNull(),
     description: text("description"),
@@ -58,10 +58,17 @@ export const students = pgTable(
     courseId: uuid("course_id")
       .notNull()
       .references(() => courses.id, { onDelete: "cascade" }),
-    /** frei gewählter Anzeigename innerhalb des Kurses */
+    /** frei gewählter Anzeigename – rein kosmetisch, darf doppelt vorkommen */
     nickname: text("nickname").notNull(),
     nicknameKey: text("nickname_key").notNull(),
     avatar: text("avatar").notNull().default("🚀"),
+
+    /**
+     * Zweiter Weg zum eigenen Fortschritt, falls das Cookie weg ist oder das
+     * Gerät wechselt. Bewusst nicht die id: der Code taucht in der Oberfläche
+     * auf, und eine interne Schlüssel-ID gehört da nicht hin.
+     */
+    recoveryCode: text("recovery_code").notNull(),
 
     xp: integer("xp").notNull().default(0),
     streakDays: integer("streak_days").notNull().default(0),
@@ -72,8 +79,11 @@ export const students = pgTable(
     lastActiveAt: timestamp("last_active_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    uniqueIndex("students_course_nickname_idx").on(t.courseId, t.nicknameKey),
+    // Kein Unique-Index auf dem Namen: die Anmeldung erkennt niemanden mehr am
+    // Namen wieder, also dürfen zwei Personen im selben Kurs "Alex" heißen.
+    index("students_course_nickname_idx").on(t.courseId, t.nicknameKey),
     index("students_course_idx").on(t.courseId),
+    uniqueIndex("students_recovery_code_idx").on(t.recoveryCode),
   ],
 );
 

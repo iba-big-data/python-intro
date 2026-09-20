@@ -34,7 +34,14 @@ export function CourseSettings({
   function copyLoginInfo() {
     const url = `${window.location.origin}/login`;
     navigator.clipboard
-      .writeText(`Anmeldung: ${url}\nKursname: ${course.name}\nKennwort: (siehe Aushang)`)
+      .writeText(
+        `Kurs: ${course.name}\nAnmeldung: ${url}\nKurskennwort: (hier eintragen)\n\n` +
+          "Beim ersten Mal gibst du das Kennwort und deinen Wunschnamen ein. " +
+          "Danach merkt sich dein Browser deinen Fortschritt – nutze immer dasselbe " +
+          "Gerät und denselben Browser, und lösche die Cookies dieser Seite nicht. " +
+          "Notier dir den Wiederherstellungscode aus deinem Profil: damit kommst du " +
+          "auch auf einem anderen Gerät an deinen Stand.",
+      )
       .then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -78,8 +85,8 @@ export function CourseSettings({
               className="w-full rounded-xl border border-line bg-abyss px-4 py-3 font-mono outline-none transition placeholder:font-sans placeholder:text-ink-faint focus:border-cyan focus:ring-2 focus:ring-cyan/20"
             />
             <span className="mt-1.5 block text-xs text-ink-faint">
-              Achtung: Nach einer Änderung müssen sich alle neu anmelden. Der Fortschritt bleibt
-              erhalten.
+              Muss sich vom Kennwort aller anderen Kurse unterscheiden, mindestens 8 Zeichen. Wer
+              bereits angemeldet ist, bleibt es – das neue Kennwort gilt für neue Anmeldungen.
             </span>
           </label>
 
@@ -111,8 +118,10 @@ export function CourseSettings({
       <div className="rounded-2xl border border-line p-6">
         <h3 className="mb-2 font-semibold">Zugang teilen</h3>
         <p className="mb-4 text-sm text-ink-dim">
-          Studierende melden sich unter <code className="text-cyan">/login</code> mit dem Kursnamen
-          und dem Kennwort an. Einen eigenen Account brauchen sie nicht – nur einen Anzeigenamen.
+          Studierende melden sich unter <code className="text-cyan">/login</code> allein mit dem
+          Kurskennwort an, dazu ein frei gewählter Anzeigename. Einen eigenen Account brauchen sie
+          nicht: Der Fortschritt hängt am Browser-Cookie, als Rückweg bekommt jede:r einen
+          Wiederherstellungscode.
         </p>
         <button
           onClick={copyLoginInfo}

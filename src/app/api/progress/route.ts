@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { badges, progress, students } from "@/lib/db/schema";
-import { getStudentSession } from "@/lib/auth";
+import { getStudentSession, touchStudentSession } from "@/lib/auth";
 import { computeBadgeStats, courseHasLesson, getCourseLevelScale } from "@/lib/courses";
 import { getLesson, getStep, stepXp } from "@/content";
 import {
@@ -142,6 +142,11 @@ export async function POST(request: Request) {
   } else {
     await db.update(students).set({ lastActiveAt: now }).where(eq(students.id, student.id));
   }
+
+  // Das Cookie ist der einzige Weg zurück zum eigenen Fortschritt. Bei jedem
+  // Lebenszeichen verlängern, damit die Frist ab dem letzten Lernen läuft und
+  // niemand mitten im Semester ausgesperrt wird.
+  await touchStudentSession(session);
 
   // Abzeichen prüfen
   const stats = await computeBadgeStats(session.studentId, session.courseId, hourOfDay, localDay);
