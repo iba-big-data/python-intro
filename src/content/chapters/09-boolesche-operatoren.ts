@@ -99,6 +99,7 @@ Und zum Schluss:
         },
         {
           id: "mit-or-verbessern",
+          carryOver: true,
           kind: "run",
           surface: "editor",
           program: `def ist_befreundet(name):
@@ -129,6 +130,7 @@ durch
         },
         {
           id: "noch-kuerzer",
+          carryOver: true,
           kind: "run",
           surface: "editor",
           program: `def ist_befreundet(name):
@@ -166,6 +168,7 @@ vereinfachen. Wende das jetzt auf \`ist_befreundet\` an.
         },
         {
           id: "haeufiger-fehler",
+          carryOver: true,
           kind: "run",
           surface: "editor",
           program: `def ist_befreundet(name):
@@ -209,6 +212,15 @@ Aber Python ist kein Deutsch. Ersetz die \`return\`-Zeile durch die falsche Vari
         return False
     else:
         return True`,
+          // `and` löst die Aufgabe ebenso elegant (`0 <= x and x <= 100`) und
+          // wurde bisher als richtig gewertet – obwohl es erst im nächsten
+          // Kapitel drankommt und dieselbe Aufgabe dort noch einmal mit `and`
+          // gestellt wird. Hier soll `or` geübt werden.
+          disallowedAst: {
+            nodes: ["And"],
+            message:
+              "Mit `and` geht das auch – das kommt aber erst im nächsten Kapitel dran. Versuch es hier mit `or`.",
+          },
           hints: [
             "Mit den Vergleichsoperatoren `<`, `>`, `<=`, `>=`, `==` erzeugst du Booleans.",
             "Du musst `x` mit 0 und mit 100 vergleichen.",

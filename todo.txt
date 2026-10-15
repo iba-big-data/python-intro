@@ -1,0 +1,53 @@
+Python Intro (C:\Users\laram\Projekte\PythonIntro) soll ein ZWEITES, PARALLELES
+Deployment bei Netlify bekommen. Begleite mich durch die Einrichtung.
+
+WICHTIGSTE REGEL: Das bestehende Vercel-Deployment
+https://python-intro-iba.vercel.app bleibt unangetastet. Zwei Studierende
+bearbeiten den Kurs darüber von zuhause als Aufgabe bis ca. 08.10.2026. Nichts
+löschen, nicht umbenennen, keine Domain-Umstellung, keine Schema-Änderung in
+Neon, bis die beiden durch sind. Netlify kommt zusätzlich dazu, ersetzt Vercel
+nicht. Beide Deployments zeigen auf dieselbe Neon-Datenbank.
+
+WARUM NETLIFY: Aus dem Campus-WLAN der Uni Ulm sind alle *.vercel.app-IPs
+(216.198.79.{3,67,131,195}, 64.29.17.{3,67,131,195}) per TCP 443 unerreichbar –
+Routing-Loch hinter BelWü, über Mobilfunk geht es. Gemessen am 01.10.2026.
+Netlifys Pool (*.netlify.app → 35.157.26.135, 63.176.8.218, AWS Frankfurt) ist
+aus demselben Netz erreichbar, ebenso Neon auf TCP 5432.
+
+SCHON GEPRÜFT, NICHT WIEDERHOLEN:
+- npm run build läuft grün durch
+- keine Schema-Drift zwischen src/lib/db/schema.ts und drizzle/
+- Migrationen 0000–0002 sind in Neon die Live-API
+  bestätigt, students.recovery_code existiert) – bei Netlify ist also KEINE
+  Migration nötig
+- main == origin/main, Stand e51c543 ist gepusht
+
+ZU TUN:
+1. Netlify-Projekt mit GitHub-Repo lara-frost/PythonIntro verbinden, Branch main,
+   Build "npm run build" (der prebuilublic/pyodide),
+   Node 20+.
+2. Drei Umgebungsvariablen in Netlifych mir aus dem
+   Neon-Dashboard und trage sie selbst dort ein – die Vercel-Kopie ist als
+   "Sensitive" nicht auslesbar), ADMIN_PASSWORD, SESSION_SECRET. Ein neu
+   erzeugtes SESSION_SECRET ist unkriostgebunden.
+3. Nach dem Deploy die Erreichbarkeit MEINER konkreten Netlify-Adresse aus dem
+   Uni-WLAN messen, bevor ich sie weitergebe: Auflösung + TCP 443 auf jede IP.
+4. Erst danach entscheiden, ob und wae bekommen.
+
+ZU BEACHTEN:
+- In C:\Windows\System32\drivers\etc\
+  "76.76.21.21  python-intro-iba.vercel.app" als Notbehelf, damit ich die
+  Vercel-Seite im Campus-Netz sehe. Der Eintrag verfälscht jede DNS-Messung für
+  diesen Namen und soll später raus,
+- node/npm sind nicht im PATH: vorher
+  $env:Path = "C:\Program Files\nodejs;$env:Path"
+- git push/fetch gegen GitHub muss icrten.
+- Das Fortschritts-Cookie hängt am Hostnamen: wer auf der Vercel-Adresse
+  anfängt, steht auf der Netlify-Adresse bei Null. Brücke ist nur der
+  Wiederherstellungscode aus dem Prof
+
+Zwei Hinweise dazu:
+
+Parallelbetrieb ist der Normalfall, nicht der Sonderfall. Ein Netlify-Deployment anzulegen berührt Vercel in keiner Weise – getrennte Hoster, getrennte Builds, dasselbe GitHub-Repo als Quelle. Beide bauen bei einem Push auf main unabhängig voneinNeon-Datenbank zeigen, ist sogarpraktisch: Der Testkurs und der Fortschritt der beiden sind dann auf beiden Adressen derselbe Stand.
+
+Die DATABASE_URL trägst du besser selst sie ohnehin aus dem Neon-Dashboard,und so wandert das Passwort nicht durch den Chat. Für die Einrichtung brauche ich sie nicht – Migrationen sind durch, und beim Rest kann ich dich ohne den String begleiten.

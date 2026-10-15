@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import confetti from "canvas-confetti";
 import type { LevelInfo } from "@/lib/gamification";
@@ -42,11 +42,40 @@ export function XpToast({ amount, onDone }: { amount: number; onDone: () => void
   );
 }
 
+/**
+ * Wie lange das Overlay Klicks ignoriert, nachdem es aufgegangen ist.
+ *
+ * Die Meldung erscheint erst, wenn der Server geantwortet hat. In der
+ * Zwischenzeit tippt man schon auf „Nächster Schritt“ – und dieser Klick
+ * landete bisher auf dem gerade erschienenen Hintergrund und hat die Meldung
+ * sofort wieder geschlossen. Genau das ist im Testlauf gemeldet worden:
+ * „Manchmal verpasst man eine Level-Up-Notification.“
+ */
+const ARM_DELAY_MS = 450;
+
 /** Große Einblendung bei Level-Aufstieg oder neuem Abzeichen. */
 export function RewardOverlay({ reward, onClose }: { reward: Reward | null; onClose: () => void }) {
+  const [armed, setArmed] = useState(false);
+
   useEffect(() => {
-    if (reward) fireConfetti("big");
+    if (!reward) {
+      setArmed(false);
+      return;
+    }
+    fireConfetti("big");
+    const timer = setTimeout(() => setArmed(true), ARM_DELAY_MS);
+    return () => clearTimeout(timer);
   }, [reward]);
+
+  // Mit Escape geht die Meldung auch ohne Mausweg zu.
+  useEffect(() => {
+    if (!reward || !armed) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [reward, armed, onClose]);
 
   return (
     <AnimatePresence>
@@ -55,7 +84,9 @@ export function RewardOverlay({ reward, onClose }: { reward: Reward | null; onCl
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={onClose}
+          onClick={() => {
+            if (armed) onClose();
+          }}
           className="fixed inset-0 z-50 flex items-center justify-center bg-void/80 p-6 backdrop-blur-sm"
         >
           <motion.div
@@ -122,7 +153,8 @@ export function RewardOverlay({ reward, onClose }: { reward: Reward | null; onCl
 
             <button
               onClick={onClose}
-              className="mt-7 w-full rounded-xl bg-neon px-5 py-3 font-semibold text-void transition hover:bg-white"
+              disabled={!armed}
+              className="mt-7 w-full rounded-xl bg-neon px-5 py-3 font-semibold text-void transition hover:bg-white disabled:opacity-60"
             >
               Weiter geht&apos;s
             </button>

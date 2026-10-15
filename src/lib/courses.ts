@@ -7,6 +7,7 @@ import { chapters, getChapterOfLesson, getLesson } from "@/content";
 import { stepXp } from "@/content/types";
 import type { Chapter, Lesson } from "@/content/types";
 import {
+  BADGES_BY_ID,
   type BadgeStats,
   levelInfo,
   levelScale,
@@ -199,7 +200,10 @@ export async function getStudentOverview(
     curriculum,
     progressByStep,
     solvedByLesson,
-    earnedBadges: badgeRows.map((row) => row.badgeId),
+    // Abzeichen, die es nicht mehr gibt, bleiben als Zeile in der Datenbank
+    // stehen. Ungefiltert zählte das Profil sie mit und zeigte „13 von 12
+    // freigeschaltet“.
+    earnedBadges: badgeRows.map((row) => row.badgeId).filter((id) => BADGES_BY_ID.has(id)),
     level: levelInfo(student.xp, scale),
     levelScale: scale,
     lastLessonId,
@@ -223,6 +227,7 @@ export async function computeBadgeStats(
 
   let solvedExercises = 0;
   let noHintSolves = 0;
+  let solvedPredictions = 0;
   const hintsByKey = new Map<string, number>(
     rows.map((row) => [`${row.lessonId}::${row.stepId}`, row.hintsUsed]),
   );
@@ -243,6 +248,11 @@ export async function computeBadgeStats(
           solvedExercises++;
           if ((hintsByKey.get(key) ?? 0) === 0) noHintSolves++;
         }
+        // Die Rate-Frage sperrt den Ausführen-Knopf, bis sie richtig
+        // beantwortet ist – gelöst heißt hier also richtig geraten.
+        if (step.kind === "run" && step.prediction && solvedKeys.has(key)) {
+          solvedPredictions++;
+        }
       }
     }
     if (chapterDone && chapter.lessons.length > 0) completedChapters++;
@@ -251,6 +261,7 @@ export async function computeBadgeStats(
   return {
     solvedSteps: solvedKeys.size,
     solvedExercises,
+    solvedPredictions,
     firstTrySolves: rows.filter((row) => row.solved && row.attempts <= 1).length,
     noHintSolves,
     completedLessons,

@@ -5,6 +5,7 @@ import { lessonMinutes, lessonXp } from "@/content/types";
 import { LessonMap, type MapChapter } from "@/components/LessonMap";
 import { StudentBar } from "@/components/StudentBar";
 import { ContinueCard } from "@/components/ContinueCard";
+import { RefreshOnStaleProgress } from "@/components/RefreshOnStaleProgress";
 
 export const dynamic = "force-dynamic";
 
@@ -84,6 +85,8 @@ export default async function LearnPage() {
         level={level}
         courseName={course.name}
       />
+
+      <RefreshOnStaleProgress />
 
       <main className="mx-auto max-w-3xl px-6 py-10">
         <div className="mb-8">

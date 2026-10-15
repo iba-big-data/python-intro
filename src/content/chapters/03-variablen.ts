@@ -168,7 +168,7 @@ print(wort + ' ' + name)
 wort = 'Tschüss'
 print(wort + ' ' + name)`,
           text: `
-Zeit, die Shell nicht mehr für alles zu benutzen. Wechsle rechts auf den Reiter **Editor**. Dort schreibst du längere Programme. Die Shell bleibt super zum Ausprobieren – aber echte Programme leben im Editor.
+Zeit, die Shell nicht mehr für alles zu benutzen. Rechts ist jetzt der Reiter **Editor** offen. Dort schreibst du längere Programme. Die Shell bleibt super zum Ausprobieren – aber echte Programme leben im Editor.
 
 Tippe das folgende Programm in den Editor und klick dann auf **Ausführen**:
 
@@ -231,6 +231,7 @@ Sehr oft speicherst du das **Ergebnis einer Berechnung** in einer Variablen. Dam
         },
         {
           id: "satz-aendert-sich-nicht",
+          carryOver: true,
           kind: "run",
           surface: "editor",
           program: `wort = 'Hallo'

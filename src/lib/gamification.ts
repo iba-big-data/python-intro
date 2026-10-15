@@ -160,6 +160,12 @@ export type BadgeStats = {
   solvedSteps: number;
   /** gelöste Übungen (kind === "exercise") */
   solvedExercises: number;
+  /**
+   * Gelöste Schritte mit Rate-Frage. Die Frage muss richtig beantwortet
+   * werden, bevor der Code überhaupt laufen darf – ein gelöster Schritt mit
+   * Vorhersage ist also immer auch eine richtige Vorhersage.
+   */
+  solvedPredictions: number;
   /** im ersten Versuch gelöst */
   firstTrySolves: number;
   /** Übungen ohne einen einzigen Tipp gelöst */
@@ -192,6 +198,21 @@ export type BadgeDefinition = {
   goal?: { target: number; current: (stats: BadgeStats) => number; unit: string };
 };
 
+/**
+ * Die Schwellen am Kursanfang sind bewusst entzerrt.
+ *
+ * Eine Rückmeldung aus dem Testlauf: „Am Anfang vielleicht bisschen viele
+ * Abzeichen (Erste Zeile Code, direkt danach erstes Kapitel, erste Zeilen).
+ * Fand ich persönlich eher nervig als motivierend.“ Drei Abzeichen fielen in
+ * den ersten Minuten an. Geblieben ist das eine für den Einstieg; „Warm-
+ * gelaufen“ ist nach hinten gerückt, und das frühere „Kapitel eins“ ist
+ * entfallen, weil „Kapitelmeister“ denselben Moment schon feiert.
+ *
+ * Die zweite Rückmeldung wünschte sich umgekehrt *mehr* Abzeichen. Das ist
+ * kein echter Widerspruch: dort ging es um Abdeckung späterer Tätigkeiten,
+ * nicht um die Dichte am Anfang. Dafür sind „Guter Riecher“ (Rate-Fragen) und
+ * eine Zwischenstufe bei der Streak dazugekommen.
+ */
 export const BADGES: BadgeDefinition[] = [
   {
     id: "erste-zeile",
@@ -204,10 +225,10 @@ export const BADGES: BadgeDefinition[] = [
   {
     id: "warmgelaufen",
     name: "Warmgelaufen",
-    description: "10 Aufgaben geschafft.",
+    description: "25 Aufgaben geschafft.",
     icon: "🔥",
-    earned: (s) => s.solvedSteps >= 10,
-    goal: { target: 10, current: (s) => s.solvedSteps, unit: "Aufgaben" },
+    earned: (s) => s.solvedSteps >= 25,
+    goal: { target: 25, current: (s) => s.solvedSteps, unit: "Aufgaben" },
   },
   {
     id: "halbmarathon",
@@ -224,14 +245,6 @@ export const BADGES: BadgeDefinition[] = [
     icon: "💯",
     earned: (s) => s.solvedSteps >= 100,
     goal: { target: 100, current: (s) => s.solvedSteps, unit: "Aufgaben" },
-  },
-  {
-    id: "erste-lektion",
-    name: "Kapitel eins",
-    description: "Deine erste Lektion vollständig abgeschlossen.",
-    icon: "📗",
-    earned: (s) => s.completedLessons >= 1,
-    goal: { target: 1, current: (s) => s.completedLessons, unit: "Lektionen" },
   },
   {
     id: "kapitelmeister",
@@ -290,12 +303,30 @@ export const BADGES: BadgeDefinition[] = [
     goal: { target: 7, current: (s) => s.streakDays, unit: "Tage" },
   },
   {
+    // Zwischenstufe: von sieben Tagen direkt auf dreißig zu springen war die
+    // Lücke, die im Testlauf als „etwas zu viel“ aufgefallen ist.
+    id: "streak-14",
+    name: "Zwei Wochen am Stück",
+    description: "14 Tage in Folge gelernt.",
+    icon: "📅",
+    earned: (s) => s.streakDays >= 14,
+    goal: { target: 14, current: (s) => s.streakDays, unit: "Tage" },
+  },
+  {
     id: "streak-30",
     name: "Unaufhaltsam",
     description: "30 Tage in Folge gelernt.",
     icon: "👑",
     earned: (s) => s.streakDays >= 30,
     goal: { target: 30, current: (s) => s.streakDays, unit: "Tage" },
+  },
+  {
+    id: "guter-riecher",
+    name: "Guter Riecher",
+    description: "10-mal richtig vorhergesagt, was ein Programm ausgibt.",
+    icon: "🔮",
+    earned: (s) => s.solvedPredictions >= 10,
+    goal: { target: 10, current: (s) => s.solvedPredictions, unit: "Vorhersagen" },
   },
   {
     id: "sprint",

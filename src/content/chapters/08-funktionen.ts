@@ -75,6 +75,7 @@ Füg dem Rumpf eine zweite Zeile hinzu:
         },
         {
           id: "funktion-umbenennen",
+          carryOver: true,
           kind: "run",
           surface: "editor",
           program: `def sag_hallo(name):
@@ -109,6 +110,7 @@ Kleine Übung: Benenn die Funktion von \`begruesse\` in \`sag_hallo\` um.
         },
         {
           id: "parameter-umbenennen",
+          carryOver: true,
           kind: "run",
           surface: "editor",
           program: `def sag_hallo(personen_name):
@@ -190,6 +192,7 @@ Funktionen können auch mehrere Parameter haben:
         },
         {
           id: "parameter-tauschen",
+          carryOver: true,
           kind: "run",
           surface: "editor",
           program: `def oft_ausgeben(n, ding):
@@ -401,7 +404,7 @@ Der entscheidende Unterschied, den du dir merken solltest:
 - \`print(x)\` **zeigt** etwas an. Danach ist der Wert weg.
 - \`return x\` **liefert** einen Wert zurück, mit dem weitergerechnet werden kann.
 
-Fast immer willst du \`return\`. Eine Funktion, die nur \`print\`t, lässt sich nicht weiterverwenden.
+Fast immer willst du \`return\`. Eine Funktion, die nur etwas mit \`print\` ausgibt, lässt sich nicht weiterverwenden.
 `,
     },
 
@@ -463,7 +466,7 @@ assert_equal(verdoppeln(5), 10)`,
             correctIndex: 0,
           },
           text: `
-Die \`OK\`s sagen dir: Die Tests sind durchgelaufen, \`verdoppeln\` funktioniert.
+Die beiden \`OK\` sagen dir: Die Tests sind durchgelaufen, \`verdoppeln\` funktioniert.
 
 Aber ein Test, der immer \`OK\` sagt, ist wertlos – er könnte ja kaputt sein. Prüfen wir das, indem wir die Funktion absichtlich falsch machen: \`x * 3\` statt \`x * 2\`.
 

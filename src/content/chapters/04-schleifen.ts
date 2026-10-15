@@ -272,6 +272,12 @@ Bevor wir weitere Schleifen anschauen, brauchen wir noch ein Konzept. Sieh dir d
     print(hallo)
 
 Was macht wohl die Zeile \`hallo = hallo + '!'\`? Rate erst, dann führ es aus.
+
+Für genau dieses Muster – eine Variable um etwas verlängern – gibt es eine Kurzschreibweise:
+
+    hallo += '!'
+
+bedeutet dasselbe wie \`hallo = hallo + '!'\`. Beides ist richtig; die kurze Form begegnet dir ab jetzt immer wieder.
 `,
           task: "Führ das Programm aus.",
         },

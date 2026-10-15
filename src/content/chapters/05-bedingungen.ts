@@ -94,6 +94,7 @@ Hier ein interessanteres Beispiel:
         },
         {
           id: "begeistert-false",
+          carryOver: true,
           kind: "run",
           surface: "editor",
           program: `satz = 'Hallo Welt'
@@ -114,6 +115,7 @@ print(satz)`,
         },
         {
           id: "verwirrt-uebung",
+          carryOver: true,
           kind: "exercise",
           mode: "stdout",
           params: ["satz", "begeistert", "verwirrt"],
@@ -277,6 +279,7 @@ Führ das Programm jetzt aus und prüf, ob deine Vorhersage stimmt.
         },
         {
           id: "nur-erstes-zeichen",
+          carryOver: true,
           kind: "exercise",
           mode: "stdout",
           params: ["satz"],
@@ -337,6 +340,7 @@ Eine \`if\`-Anweisung kann optional einen \`else\`-Teil haben. Führ dieses Beis
         },
         {
           id: "erstes-else-false",
+          carryOver: true,
           kind: "run",
           surface: "editor",
           program: `bedingung = False
@@ -377,6 +381,7 @@ Hier ein interessanteres Beispiel:
         },
         {
           id: "upper-lower-false",
+          carryOver: true,
           kind: "run",
           surface: "editor",
           program: `satz = 'Hallo Welt'
@@ -397,6 +402,8 @@ Setz jetzt \`begeistert\` auf \`False\` und führ es erneut aus.
         },
         {
           id: "undefinierte-variable",
+          // Kein carryOver: dieser Schritt zeigt ein neues, absichtlich
+          // kaputtes Programm und baut nicht auf dem vorherigen auf.
           kind: "run",
           surface: "editor",
           expectsError: true,
@@ -422,11 +429,7 @@ Hier ist ein kaputtes Programm:
 
 Siehst du das Problem? Wenn du es so ausführst, sieht alles gut aus. Was könnte schiefgehen?
 
-.
-
-.
-
-.
+*Überleg erst selbst. Die Auflösung steht im nächsten Absatz.*
 
 Genau: Was passiert, wenn \`begeistert\` auf \`False\` steht? Probier es aus – setz \`begeistert = False\` und führ es aus.
 `,
@@ -434,6 +437,7 @@ Genau: Was passiert, wenn \`begeistert\` auf \`False\` steht? Probier es aus –
         },
         {
           id: "else-punkt",
+          carryOver: true,
           kind: "exercise",
           mode: "stdout",
           params: ["satz", "begeistert"],
@@ -627,6 +631,7 @@ Setzen wir \`==\` in einer \`if\`-Anweisung ein. In diesem Programm läuft der \
         },
         {
           id: "leetspeak",
+          carryOver: true,
           kind: "exercise",
           mode: "stdout",
           params: ["name"],
@@ -716,6 +721,7 @@ Genau diesen Vorgang bauen wir jetzt nach. Probieren wir es mit derselben Techni
         },
         {
           id: "dna-mit-else",
+          carryOver: true,
           kind: "exercise",
           mode: "stdout",
           params: ["dna"],

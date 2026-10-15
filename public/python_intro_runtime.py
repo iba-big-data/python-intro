@@ -385,10 +385,46 @@ def fail(message, **extra):
     return {"passed": False, "message": message, **extra}
 
 
+def _squash_spaces(line):
+    """
+    Entfernt Leerzeichen *außerhalb* von Zeichenketten, behält die Einrückung.
+
+    Für Programme, die absichtlich nicht parsen, bleibt nur der Textvergleich –
+    und der war vorher auf jedes Leerzeichen empfindlich: `print(1+2=3)` galt
+    als falsch, `print(1 + 2 = 3)` als richtig. Die Einrückung bleibt erhalten,
+    weil es Beispiele gibt, bei denen genau sie den Fehler ausmacht, und
+    Leerzeichen in Strings bleiben ebenfalls stehen.
+    """
+    stripped = line.lstrip()
+    indent = line[: len(line) - len(stripped)]
+
+    out = []
+    quote = None
+    index = 0
+    while index < len(stripped):
+        char = stripped[index]
+        if quote:
+            out.append(char)
+            if char == "\\" and index + 1 < len(stripped):
+                out.append(stripped[index + 1])
+                index += 2
+                continue
+            if char == quote:
+                quote = None
+        elif char in "\"'":
+            quote = char
+            out.append(char)
+        elif char not in " \t":
+            out.append(char)
+        index += 1
+
+    return indent + "".join(out)
+
+
 def same_text(a, b):
     """Zeilenweiser Vergleich – für Programme, die absichtlich nicht parsen."""
     def tidy(text):
-        lines = [line.rstrip() for line in text.strip("\n").split("\n")]
+        lines = [_squash_spaces(line.rstrip()) for line in text.strip("\n").split("\n")]
         while lines and not lines[0]:
             lines.pop(0)
         while lines and not lines[-1]:
@@ -512,6 +548,72 @@ def _describe(value, mode):
     return repr(value)
 
 
+def _is_literal(node):
+    """Ein fest hingeschriebener Wert – Zahl, Text, Liste, Dict, Tupel davon."""
+    if isinstance(node, ast.Constant):
+        return True
+    if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
+        return all(_is_literal(element) for element in node.elts)
+    if isinstance(node, ast.Dict):
+        return all(_is_literal(k) and _is_literal(v) for k, v in zip(node.keys, node.values))
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
+        return _is_literal(node.operand)
+    return False
+
+
+def strip_param_assignments(code, params):
+    """
+    Entfernt die einleitende Vorbelegung der Testparameter aus dem Nutzercode.
+
+    Die Aufgabentexte laden ausdrücklich dazu ein, die erste Zeile stehen zu
+    lassen („Die erste Zeile (name = ...) darfst du stehen lassen“). Technisch
+    war das bisher das Gegenteil von harmlos: die Testwerte liegen schon im
+    Namespace, und die Zuweisung im Editor hat sie wieder überschrieben – eine
+    völlig korrekte Lösung fiel dadurch durch. Beide Studierenden sind an
+    derselben Stelle hängengeblieben (Kapitel 4, „Erste Schleifen-Übungen“).
+
+    Entfernt wird bewusst nur wenig:
+      * nur Zuweisungen **ganz am Anfang** des Programms, vor dem ersten
+        richtigen Befehl (Importe dürfen dazwischenstehen),
+      * nur auf einen einzelnen Namen, der auch wirklich Testparameter ist,
+      * nur mit einem **festen Wert** rechts.
+
+    Damit bleibt `satz = satz.upper()` mitten im Programm unangetastet – das
+    ist Teil der Lösung und keine Vorbelegung.
+    """
+    if not params:
+        return code
+
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return code
+
+    names = set(params)
+    drop = set()
+    for node in tree.body:
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            continue
+        if (
+            isinstance(node, ast.Assign)
+            and len(node.targets) == 1
+            and isinstance(node.targets[0], ast.Name)
+            and node.targets[0].id in names
+            and _is_literal(node.value)
+        ):
+            end = getattr(node, "end_lineno", None) or node.lineno
+            drop.update(range(node.lineno, end + 1))
+            continue
+        # Der erste echte Befehl beendet den Vorspann.
+        break
+
+    if not drop:
+        return code
+
+    kept = [line for number, line in enumerate(code.split("\n"), 1) if number not in drop]
+    return "\n".join(kept)
+
+
 def check_exercise(user_code, spec):
     """
     Prüft eine Übung gegen Testfälle.
@@ -530,6 +632,10 @@ def check_exercise(user_code, spec):
     params = spec.get("params") or []
     tests = spec.get("tests") or []
     function_name = spec.get("functionName")
+
+    # Skript-Aufgaben: die Vorbelegung der Testwerte gehört dem Test, nicht dem
+    # Editor – siehe strip_param_assignments.
+    script_code = user_code if function_name else strip_param_assignments(user_code, params)
 
     # Ausgabe, die die Studierende zu sehen bekommt: der Lauf mit dem ersten Testfall.
     shown = {"output": "", "error": None}
@@ -588,7 +694,7 @@ def check_exercise(user_code, spec):
             namespace = new_namespace()
             for name, value in zip(params, args):
                 namespace[name] = _copy(value)
-            _, output, error = execute(user_code, namespace, stdin=test.get("stdin"))
+            _, output, error = execute(script_code, namespace, stdin=test.get("stdin"))
             if index == 0:
                 shown["output"] = output
                 shown["error"] = error
@@ -610,6 +716,19 @@ def check_exercise(user_code, spec):
                 },
                 **shown,
             )
+
+    # Auch im Erfolgsfall dazusagen, womit gerechnet wurde. Die gezeigte
+    # Ausgabe stammt vom ersten Testfall, nicht von den Werten aus dem
+    # Aufgabentext – ohne Hinweis wirkt sie willkürlich.
+    if tests:
+        first = tests[0]["args"]
+        label = (
+            f"{function_name}({_args_repr(first)})"
+            if function_name
+            else _inputs_repr(params, first)
+        )
+        if label:
+            return ok(inputs=label, **shown)
 
     return ok(**shown)
 

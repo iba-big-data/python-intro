@@ -239,7 +239,7 @@
             "kind": "run",
             "surface": "editor",
             "program": "wort = 'Hallo'\nname = 'Welt'\nprint(wort + ' ' + name)\nwort = 'Tschüss'\nprint(wort + ' ' + name)",
-            "text": "\nZeit, die Shell nicht mehr für alles zu benutzen. Wechsle rechts auf den Reiter **Editor**. Dort schreibst du längere Programme. Die Shell bleibt super zum Ausprobieren – aber echte Programme leben im Editor.\n\nTippe das folgende Programm in den Editor und klick dann auf **Ausführen**:\n\n    wort = 'Hallo'\n    name = 'Welt'\n    print(wort + ' ' + name)\n    wort = 'Tschüss'\n    print(wort + ' ' + name)\n",
+            "text": "\nZeit, die Shell nicht mehr für alles zu benutzen. Rechts ist jetzt der Reiter **Editor** offen. Dort schreibst du längere Programme. Die Shell bleibt super zum Ausprobieren – aber echte Programme leben im Editor.\n\nTippe das folgende Programm in den Editor und klick dann auf **Ausführen**:\n\n    wort = 'Hallo'\n    name = 'Welt'\n    print(wort + ' ' + name)\n    wort = 'Tschüss'\n    print(wort + ' ' + name)\n",
             "task": "Tippe das Programm in den Editor und führ es aus."
           }
         ],
@@ -271,6 +271,7 @@
           },
           {
             "id": "satz-aendert-sich-nicht",
+            "carryOver": true,
             "kind": "run",
             "surface": "editor",
             "program": "wort = 'Hallo'\nname = 'Welt'\nsatz = wort + ' ' + name\nprint(satz)\nwort = 'Tschüss'\nprint(satz)",
@@ -443,7 +444,7 @@
               ],
               "correctIndex": 1
             },
-            "text": "\nBevor wir weitere Schleifen anschauen, brauchen wir noch ein Konzept. Sieh dir dieses Programm an:\n\n    hallo = 'Hallo'\n    print(hallo)\n    hallo = hallo + '!'\n    print(hallo)\n\nWas macht wohl die Zeile `hallo = hallo + '!'`? Rate erst, dann führ es aus.\n",
+            "text": "\nBevor wir weitere Schleifen anschauen, brauchen wir noch ein Konzept. Sieh dir dieses Programm an:\n\n    hallo = 'Hallo'\n    print(hallo)\n    hallo = hallo + '!'\n    print(hallo)\n\nWas macht wohl die Zeile `hallo = hallo + '!'`? Rate erst, dann führ es aus.\n\nFür genau dieses Muster – eine Variable um etwas verlängern – gibt es eine Kurzschreibweise:\n\n    hallo += '!'\n\nbedeutet dasselbe wie `hallo = hallo + '!'`. Beides ist richtig; die kurze Form begegnet dir ab jetzt immer wieder.\n",
             "task": "Führ das Programm aus."
           },
           {
@@ -789,6 +790,7 @@
           },
           {
             "id": "begeistert-false",
+            "carryOver": true,
             "kind": "run",
             "surface": "editor",
             "program": "satz = 'Hallo Welt'\nbegeistert = False\nif begeistert:\n    satz += '!'\nprint(satz)",
@@ -804,6 +806,7 @@
           },
           {
             "id": "verwirrt-uebung",
+            "carryOver": true,
             "kind": "exercise",
             "mode": "stdout",
             "params": [
@@ -900,6 +903,7 @@
           },
           {
             "id": "nur-erstes-zeichen",
+            "carryOver": true,
             "kind": "exercise",
             "mode": "stdout",
             "params": [
@@ -947,6 +951,7 @@
           },
           {
             "id": "erstes-else-false",
+            "carryOver": true,
             "kind": "run",
             "surface": "editor",
             "program": "bedingung = False\nif bedingung:\n    print('Ja')\nelse:\n    print('Nein')",
@@ -963,6 +968,7 @@
           },
           {
             "id": "upper-lower-false",
+            "carryOver": true,
             "kind": "run",
             "surface": "editor",
             "program": "satz = 'Hallo Welt'\nbegeistert = False\nif begeistert:\n    satz = satz.upper()\nelse:\n    satz = satz.lower()\nprint(satz)",
@@ -975,11 +981,12 @@
             "surface": "editor",
             "expectsError": true,
             "program": "satz = 'Hallo Welt'\nbegeistert = False\n\nif begeistert:\n    zeichen = '!'\nsatz += zeichen\n\nprint(satz)",
-            "text": "\nHier ist ein kaputtes Programm:\n\n    satz = 'Hallo Welt'\n    begeistert = True\n\n    if begeistert:\n        zeichen = '!'\n    satz += zeichen\n\n    print(satz)\n\nSiehst du das Problem? Wenn du es so ausführst, sieht alles gut aus. Was könnte schiefgehen?\n\n.\n\n.\n\n.\n\nGenau: Was passiert, wenn `begeistert` auf `False` steht? Probier es aus – setz `begeistert = False` und führ es aus.\n",
+            "text": "\nHier ist ein kaputtes Programm:\n\n    satz = 'Hallo Welt'\n    begeistert = True\n\n    if begeistert:\n        zeichen = '!'\n    satz += zeichen\n\n    print(satz)\n\nSiehst du das Problem? Wenn du es so ausführst, sieht alles gut aus. Was könnte schiefgehen?\n\n*Überleg erst selbst. Die Auflösung steht im nächsten Absatz.*\n\nGenau: Was passiert, wenn `begeistert` auf `False` steht? Probier es aus – setz `begeistert = False` und führ es aus.\n",
             "task": "Führ die Variante mit `begeistert = False` aus."
           },
           {
             "id": "else-punkt",
+            "carryOver": true,
             "kind": "exercise",
             "mode": "stdout",
             "params": [
@@ -1113,6 +1120,7 @@
           },
           {
             "id": "leetspeak",
+            "carryOver": true,
             "kind": "exercise",
             "mode": "stdout",
             "params": [
@@ -1158,6 +1166,7 @@
           },
           {
             "id": "dna-mit-else",
+            "carryOver": true,
             "kind": "exercise",
             "mode": "stdout",
             "params": [
@@ -1335,7 +1344,7 @@
             "kind": "run",
             "surface": "editor",
             "program": "woerter = ['Das', 'ist', 'eine', 'Liste']\n\nfor wort in woerter:\n    print(wort)",
-            "text": "\nBisher hast du Schleifen über Strings laufen lassen – Zeichen für Zeichen. Jetzt kommt etwas viel Nützlicheres: die **Liste**.\n\nEine Liste ist ein einzelner Wert, der beliebig viele andere Werte enthält. Du schreibst sie mit eckigen Klammern `[ ]` und trennst die Einträge mit Kommas. Führ das aus:\n\n    woerter = ['Das', 'ist', 'eine', 'Liste']\n\n    for wort in woerter:\n        print(wort)\n",
+            "text": "\nBisher hast du Schleifen über Strings laufen lassen – Zeichen für Zeichen. Jetzt kommt etwas viel Nützlicheres: die **Liste**, englisch *list*.\n\nEine Liste ist ein einzelner Wert, der beliebig viele andere Werte enthält. Die einzelnen Werte darin heißen **Elemente** (*elements* oder *items*). Du schreibst eine Liste mit eckigen Klammern `[ ]` und trennst die Einträge mit Kommas. Führ das aus:\n\n    woerter = ['Das', 'ist', 'eine', 'Liste']\n\n    for wort in woerter:\n        print(wort)\n",
             "task": "Führ das Programm aus."
           },
           {
@@ -1670,9 +1679,9 @@
             "kind": "run",
             "surface": "shell",
             "expectsError": true,
-            "program": "woerter[4]",
-            "text": "\nDas ist die wichtigste Eigenart überhaupt: **Gezählt wird ab 0.** Das erste Element hat den Index `0`, das zweite `1`, und so weiter. Die Zahl in den Klammern heißt **Index**, den Vorgang nennt man *indizieren* oder *subscripting*.\n\nEine Liste mit 4 Elementen hat also die gültigen Indizes 0, 1, 2 und 3. Was passiert bei 4? Probier es in der Shell:\n\n    woerter[4]\n",
-            "task": "Führ `woerter[4]` in der Shell aus und lies den Fehler."
+            "program": "woerter = ['Das', 'ist', 'eine', 'Liste']\nwoerter[4]",
+            "text": "\nDas ist die wichtigste Eigenart überhaupt: **Gezählt wird ab 0.** Das erste Element hat den Index `0`, das zweite `1`, und so weiter. Die Zahl in den Klammern heißt **Index**, den Vorgang nennt man *indizieren* oder *subscripting*.\n\nEine Liste mit 4 Elementen hat also die gültigen Indizes 0, 1, 2 und 3. Was passiert bei 4? Probier es in der Shell – die Shell kennt die Liste aus dem Editor nicht, deshalb legst du sie hier noch einmal an:\n\n    woerter = ['Das', 'ist', 'eine', 'Liste']\n    woerter[4]\n",
+            "task": "Leg `woerter` in der Shell an, führ `woerter[4]` aus und lies den Fehler."
           },
           {
             "id": "len-und-range",
@@ -1721,8 +1730,8 @@
             "kind": "run",
             "surface": "shell",
             "expectsError": true,
-            "program": "indizes[4]",
-            "text": "\nUnd was passiert hier?\n\n    indizes[4]\n",
+            "program": "indizes = [0, 1, 2, 3]\nindizes[4]",
+            "text": "\nUnd was passiert hier? Auch hier legst du die Liste in der Shell noch einmal an:\n\n    indizes = [0, 1, 2, 3]\n    indizes[4]\n",
             "prediction": {
               "choices": [
                 "4",
@@ -2759,6 +2768,7 @@
           },
           {
             "id": "funktion-umbenennen",
+            "carryOver": true,
             "kind": "run",
             "surface": "editor",
             "program": "def sag_hallo(name):\n    print(f\"Hallo {name}!\")\n    print(\"Wie geht es dir?\")\n\nsag_hallo(\"Alice\")\nsag_hallo(\"Bob\")",
@@ -2767,6 +2777,7 @@
           },
           {
             "id": "parameter-umbenennen",
+            "carryOver": true,
             "kind": "run",
             "surface": "editor",
             "program": "def sag_hallo(personen_name):\n    print(f\"Hallo {personen_name}!\")\n    print(\"Wie geht es dir?\")\n\nsag_hallo(\"Alice\")\nsag_hallo(\"Bob\")",
@@ -2826,6 +2837,7 @@
           },
           {
             "id": "parameter-tauschen",
+            "carryOver": true,
             "kind": "run",
             "surface": "editor",
             "program": "def oft_ausgeben(n, ding):\n    for _ in range(n):\n        print(ding)\n\noft_ausgeben(3, \"Hallo\")",
@@ -2926,7 +2938,7 @@
             "task": "Schreib `vervierfachen(x)` – nur mit Hilfe von `verdoppeln`."
           }
         ],
-        "outro": "\nGut gemacht! Zwei mögliche Lösungen:\n\n    def vervierfachen(x):\n        x = verdoppeln(x)\n        x = verdoppeln(x)\n        return x\n\n    def vervierfachen(x):\n        return verdoppeln(verdoppeln(x))\n\nDer entscheidende Unterschied, den du dir merken solltest:\n\n- `print(x)` **zeigt** etwas an. Danach ist der Wert weg.\n- `return x` **liefert** einen Wert zurück, mit dem weitergerechnet werden kann.\n\nFast immer willst du `return`. Eine Funktion, die nur `print`t, lässt sich nicht weiterverwenden.\n"
+        "outro": "\nGut gemacht! Zwei mögliche Lösungen:\n\n    def vervierfachen(x):\n        x = verdoppeln(x)\n        x = verdoppeln(x)\n        return x\n\n    def vervierfachen(x):\n        return verdoppeln(verdoppeln(x))\n\nDer entscheidende Unterschied, den du dir merken solltest:\n\n- `print(x)` **zeigt** etwas an. Danach ist der Wert weg.\n- `return x` **liefert** einen Wert zurück, mit dem weitergerechnet werden kann.\n\nFast immer willst du `return`. Eine Funktion, die nur etwas mit `print` ausgibt, lässt sich nicht weiterverwenden.\n"
       },
       {
         "id": "funktionen/testen",
@@ -2964,7 +2976,7 @@
               ],
               "correctIndex": 0
             },
-            "text": "\nDie `OK`s sagen dir: Die Tests sind durchgelaufen, `verdoppeln` funktioniert.\n\nAber ein Test, der immer `OK` sagt, ist wertlos – er könnte ja kaputt sein. Prüfen wir das, indem wir die Funktion absichtlich falsch machen: `x * 3` statt `x * 2`.\n\n    def verdoppeln(x):\n        return x * 3\n\n    assert_equal(verdoppeln(2), 4)\n    assert_equal(verdoppeln(5), 10)\n",
+            "text": "\nDie beiden `OK` sagen dir: Die Tests sind durchgelaufen, `verdoppeln` funktioniert.\n\nAber ein Test, der immer `OK` sagt, ist wertlos – er könnte ja kaputt sein. Prüfen wir das, indem wir die Funktion absichtlich falsch machen: `x * 3` statt `x * 2`.\n\n    def verdoppeln(x):\n        return x * 3\n\n    assert_equal(verdoppeln(2), 4)\n    assert_equal(verdoppeln(5), 10)\n",
             "task": "Sag die Ausgabe voraus und führ das Programm aus."
           },
           {
@@ -3198,6 +3210,7 @@
           },
           {
             "id": "mit-or-verbessern",
+            "carryOver": true,
             "kind": "run",
             "surface": "editor",
             "program": "def ist_befreundet(name):\n    if name == \"Alice\" or name == \"Bob\":\n        return True\n    else:\n        return False\n\nassert_equal(ist_befreundet(\"Alice\"), True)\nassert_equal(ist_befreundet(\"Bob\"), True)\nassert_equal(ist_befreundet(\"Charlie\"), False)",
@@ -3206,6 +3219,7 @@
           },
           {
             "id": "noch-kuerzer",
+            "carryOver": true,
             "kind": "run",
             "surface": "editor",
             "program": "def ist_befreundet(name):\n    return name == \"Alice\" or name == \"Bob\"\n\nassert_equal(ist_befreundet(\"Alice\"), True)\nassert_equal(ist_befreundet(\"Bob\"), True)\nassert_equal(ist_befreundet(\"Charlie\"), False)",
@@ -3214,6 +3228,7 @@
           },
           {
             "id": "haeufiger-fehler",
+            "carryOver": true,
             "kind": "run",
             "surface": "editor",
             "program": "def ist_befreundet(name):\n    return name == \"Alice\" or \"Bob\"\n\nassert_equal(ist_befreundet(\"Alice\"), True)\nassert_equal(ist_befreundet(\"Bob\"), True)\nassert_equal(ist_befreundet(\"Charlie\"), False)",
@@ -3261,6 +3276,12 @@
               }
             ],
             "solution": "def ist_gueltiger_prozentwert(x):\n    if x < 0 or x > 100:\n        return False\n    else:\n        return True",
+            "disallowedAst": {
+              "nodes": [
+                "And"
+              ],
+              "message": "Mit `and` geht das auch – das kommt aber erst im nächsten Kapitel dran. Versuch es hier mit `or`."
+            },
             "hints": [
               "Mit den Vergleichsoperatoren `<`, `>`, `<=`, `>=`, `==` erzeugst du Booleans.",
               "Du musst `x` mit 0 und mit 100 vergleichen.",
@@ -4244,6 +4265,7 @@
           },
           {
             "id": "vorhersage-einzeln",
+            "carryOver": true,
             "kind": "run",
             "surface": "editor",
             "program": "import pandas as pd\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.linear_model import LinearRegression\n\ndf = pd.read_csv('student_grades.csv')\n\nX = df.drop(columns=['Student', 'Grade'])\ny = df['Grade']\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, random_state=42\n)\n\nmodell = LinearRegression()\nmodell.fit(X_train, y_train)\n\n# Probier ruhig verschiedene Lernzeiten aus!\nneue_lernzeit = 25\n\nneuer_student = pd.DataFrame({'Study time (Hours)': [neue_lernzeit]})\nvorhersage = modell.predict(neuer_student)[0]\n\nprint(f\"Bei {neue_lernzeit} Stunden Lernzeit sagt das Modell die Note {vorhersage:.2f} voraus.\")",
@@ -4252,6 +4274,7 @@
           },
           {
             "id": "vorhersagen-vergleichen",
+            "carryOver": true,
             "kind": "run",
             "surface": "editor",
             "program": "import pandas as pd\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.linear_model import LinearRegression\n\ndf = pd.read_csv('student_grades.csv')\n\nX = df.drop(columns=['Student', 'Grade'])\ny = df['Grade']\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, random_state=42\n)\n\nmodell = LinearRegression()\nmodell.fit(X_train, y_train)\n\n# Vorhersagen für die zurückgelegten Testdaten\ny_pred = modell.predict(X_test)\n\n# Ergebnisse übersichtlich nebeneinanderstellen\nergebnis = X_test.copy()\nergebnis['Vorhergesagt'] = y_pred.round(1)\nergebnis['Tatsächlich'] = y_test.values\nergebnis['Student'] = df.loc[X_test.index, 'Student']\nergebnis = ergebnis[['Student', 'Study time (Hours)', 'Vorhergesagt', 'Tatsächlich']]\n\nprint(ergebnis)",

@@ -9,13 +9,16 @@ import {
   CheckCircle2,
   FlaskConical,
   Flame,
+  Info,
   Loader2,
   Play,
   RefreshCw,
+  X,
 } from "lucide-react";
 import type { Lesson, Step } from "@/content/types";
 import { stepXp } from "@/content/types";
 import { levelInfo, todayKey, xpAfterHints, type LevelInfo } from "@/lib/gamification";
+import { markProgressStale } from "@/lib/progressStale";
 import { usePython, type RunResult } from "@/lib/usePython";
 import { Markdown } from "./Markdown";
 import { CodeEditor } from "./CodeEditor";
@@ -77,11 +80,64 @@ function surfaceOf(step: Step): "editor" | "shell" {
   return step.kind === "run" || step.kind === "experiment" ? step.surface : "editor";
 }
 
-function starterCode(step: Step): string {
-  if (step.kind === "exercise") return step.starter ?? "";
-  if (step.kind === "run" && step.surface === "editor") return "";
+/**
+ * Der Code aus dem letzten **Editor**-Schritt vor `index`.
+ *
+ * Dazwischen liegen oft Shell-Schritte, deren Eingaben hier nichts verloren
+ * haben – deshalb wird gezielt zurückgesucht statt nur ein Schritt zurück.
+ */
+function codeBefore(
+  lesson: Lesson,
+  index: number,
+  codeByStep: Record<string, string>,
+  solved: Set<string>,
+): string {
+  for (let i = index - 1; i >= 0; i--) {
+    const previous = lesson.steps[i];
+    if (previous.kind === "read" || surfaceOf(previous) !== "editor") continue;
+
+    const typed = codeByStep[previous.id];
+    if (typed?.trim()) return typed;
+
+    // Direkt hierher gesprungen oder Seite neu geladen: auf die Vorlage
+    // zurückfallen. Bei `run` steht sie ohnehin im Lektionstext; eine
+    // Musterlösung gibt es nur her, wenn der Schritt schon gelöst ist.
+    if (previous.kind === "run") return previous.program;
+    if (previous.kind === "exercise" && solved.has(previous.id)) return previous.solution;
+    return "";
+  }
+
   return "";
 }
+
+/**
+ * Womit der Editor startet, wenn dieser Schritt zum ersten Mal drankommt.
+ *
+ * Schritte mit `carryOver` bauen ausdrücklich auf dem vorherigen Programm auf
+ * („Häng die folgenden zwei Zeilen an“, „Ändere jetzt `begeistert` zu
+ * `False`“). Vorher stand dort ein leeres Feld, und in Kapitel 12 war der
+ * Schritt dadurch gar nicht mehr lösbar, weil `pandas` und das trainierte
+ * Modell aus dem Vorgängerschritt fehlten.
+ */
+function initialCode(
+  lesson: Lesson,
+  index: number,
+  codeByStep: Record<string, string>,
+  solved: Set<string>,
+): string {
+  const step = lesson.steps[index];
+  if (!step) return "";
+  if (step.kind === "exercise" && step.starter) return step.starter;
+  if (!step.carryOver) return "";
+  return codeBefore(lesson, index, codeByStep, solved);
+}
+
+/**
+ * Schlüssel für den Code auf der Spielwiese nach dem letzten Schritt.
+ *
+ * Steps heißen nie so – ein Zusammenstoß ist also ausgeschlossen.
+ */
+const PLAYGROUND = "__spielwiese__";
 
 export function LessonView({
   lesson,
@@ -110,6 +166,9 @@ export function LessonView({
   const [shellEntries, setShellEntries] = useState<ShellEntry[]>([]);
   const [tab, setTab] = useState<"editor" | "shell">("editor");
 
+  const [pasteHintShown, setPasteHintShown] = useState(false);
+  const [pasteHint, setPasteHint] = useState(false);
+
   const [xp, setXp] = useState(student.xp);
   const [streak, setStreak] = useState(student.streakDays);
   const [level, setLevel] = useState<LevelInfo>(() => levelInfo(student.xp, levelScale));
@@ -120,19 +179,27 @@ export function LessonView({
 
   // Beim Step-Wechsel: passende Eingabefläche wählen, Ausgabe leeren
   useEffect(() => {
-    if (!step) return;
-    setTab(surfaceOf(step));
     setResult(null);
     textRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    // Am Lektionsende bleibt der zuletzt gewählte Reiter stehen – die
+    // Spielwiese soll dort weitermachen, wo man aufgehört hat.
+    if (step) setTab(surfaceOf(step));
   }, [step?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const code = step ? (codeByStep[step.id] ?? starterCode(step)) : "";
+  // Nach dem letzten Schritt bleibt der Editor als Spielwiese stehen, mit dem
+  // Code der Lektion darin.
+  const codeKey = step ? step.id : PLAYGROUND;
+  const code =
+    codeByStep[codeKey] ??
+    (step
+      ? initialCode(lesson, index, codeByStep, solved)
+      : codeBefore(lesson, lesson.steps.length, codeByStep, solved));
+
   const setCode = useCallback(
     (value: string) => {
-      if (!step) return;
-      setCodeByStep((current) => ({ ...current, [step.id]: value }));
+      setCodeByStep((current) => ({ ...current, [codeKey]: value }));
     },
-    [step],
+    [codeKey],
   );
 
   /** Fortschritt an den Server melden und Belohnungen einsammeln. */
@@ -161,6 +228,10 @@ export function LessonView({
       setStreak(data.streakDays);
 
       if (data.newlySolved) {
+        // Der Lernpfad zeigt sonst den Stand von vorhin – er wird aus dem
+        // Router-Cache wiederhergestellt, wenn man zurücknavigiert.
+        markProgressStale();
+
         // Der Server sagt jetzt direkt, was dieser Step wert war – vorher wurde
         // das aus der XP-Summe zurückgerechnet, was bei zwei schnell
         // aufeinanderfolgenden Meldungen danebenlag.
@@ -209,18 +280,19 @@ export function LessonView({
    * kassieren – und ohne die Vorlage exakt treffen zu müssen.
    */
   const runScratch = useCallback(async () => {
-    if (!step || busy || !python.ready) return;
+    if (busy || !python.ready) return;
     setBusy(true);
     const runResult = await python.run(code, "editor", { kind: "scratch" });
     setBusy(false);
     setResult(runResult);
-  }, [step, busy, python, code]);
+  }, [busy, python, code]);
 
   const runShell = useCallback(
     async (input: string) => {
-      if (!step || busy) return;
+      if (busy) return;
       setBusy(true);
-      const runResult = await python.run(input, "shell", checkSpec(step));
+      // Auf der Spielwiese nach dem letzten Schritt wird nichts mehr geprüft.
+      const runResult = await python.run(input, "shell", step ? checkSpec(step) : { kind: "scratch" });
       setBusy(false);
 
       setShellEntries((current) => [
@@ -231,7 +303,7 @@ export function LessonView({
           isError: Boolean(runResult.error),
         },
       ]);
-      handleResult(step.id, runResult, input);
+      if (step) handleResult(step.id, runResult, input);
     },
     [step, busy, python, handleResult],
   );
@@ -258,6 +330,22 @@ export function LessonView({
   const lessonXpTotal = lesson.steps.reduce((sum, s) => sum + stepXp(s), 0);
   const needsPrediction =
     step?.kind === "run" && step.prediction && !predictionDone.has(step.id) && !stepSolved;
+
+  /**
+   * Übungen belegen ihre Parameter von außen vor. Dass es sie überhaupt gibt,
+   * stand nirgends – „aber `name` ist doch jetzt gar nicht mehr definiert,
+   * oder?“ war die naheliegende Frage einer Anfängerin.
+   */
+  const presetParams = useMemo(() => {
+    if (step?.kind !== "exercise" || step.functionName) return [];
+    return step.params;
+  }, [step]);
+
+  const noticePaste = useCallback(() => {
+    if (pasteHintShown) return;
+    setPasteHintShown(true);
+    setPasteHint(true);
+  }, [pasteHintShown]);
 
   const hintList = useMemo(() => {
     if (!step) return [];
@@ -400,8 +488,51 @@ export function LessonView({
               <div className="min-h-0 overflow-hidden border-b border-line">
                 {tab === "editor" ? (
                   <div className="flex h-full flex-col">
+                    {presetParams.length > 0 && (
+                      <div className="flex items-start gap-2 border-b border-line bg-cyan/5 px-3 py-2 text-xs text-ink-dim">
+                        <Info className="mt-0.5 size-3.5 shrink-0 text-cyan" />
+                        <span>
+                          {presetParams.length === 1 ? (
+                            <>
+                              <code className="text-cyan">{presetParams[0]}</code> ist für den Test
+                              schon gesetzt
+                            </>
+                          ) : (
+                            <>
+                              <code className="text-cyan">{presetParams.join("`, `")}</code> sind
+                              für den Test schon gesetzt
+                            </>
+                          )}{" "}
+                          – du musst sie nicht anlegen. Eine eigene Zuweisung am Anfang stört aber
+                          auch nicht.
+                        </span>
+                      </div>
+                    )}
+
+                    {pasteHint && (
+                      <div className="flex items-start gap-2 border-b border-line bg-amber/5 px-3 py-2 text-xs text-ink-dim">
+                        <Info className="mt-0.5 size-3.5 shrink-0 text-amber" />
+                        <span className="flex-1">
+                          Eingefügt – das klappt. Fürs Behalten bringt Selbsttippen trotzdem deutlich
+                          mehr.
+                        </span>
+                        <button
+                          onClick={() => setPasteHint(false)}
+                          className="shrink-0 text-ink-faint transition hover:text-ink"
+                          title="Hinweis ausblenden"
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+                    )}
+
                     <div className="min-h-0 flex-1 overflow-auto">
-                      <CodeEditor value={code} onChange={setCode} onRun={runEditor} />
+                      <CodeEditor
+                        value={code}
+                        onChange={setCode}
+                        onRun={runEditor}
+                        onPaste={noticePaste}
+                      />
                     </div>
                     <div className="flex items-center justify-between gap-3 border-t border-line bg-surface/40 px-3 py-2">
                       <span className="min-w-0 truncate text-xs text-ink-faint">
@@ -463,18 +594,91 @@ export function LessonView({
           </section>
         )}
 
-        {/* Lesestep oder Abschluss: rechte Spalte zeigt Ruhe statt Editor */}
-        {(finished || step?.kind === "read") && (
+        {/* Lesestep: rechte Spalte zeigt Ruhe statt Editor */}
+        {!finished && step?.kind === "read" && (
           <aside className="hidden items-center justify-center p-10 lg:flex">
             <div className="text-center">
-              <div className="mb-3 text-6xl opacity-40">{finished ? "🏁" : "📖"}</div>
+              <div className="mb-3 text-6xl opacity-40">📖</div>
               <p className="max-w-xs text-sm text-ink-faint">
-                {finished
-                  ? "Lektion geschafft. Weiter unten geht die Reise."
-                  : "Bei diesem Schritt geht es ums Lesen – gleich darfst du wieder tippen."}
+                Bei diesem Schritt geht es ums Lesen – gleich darfst du wieder tippen.
               </p>
             </div>
           </aside>
+        )}
+
+        {/* Nach dem letzten Schritt: Editor und Shell bleiben zum Ausprobieren
+            stehen. Vorher stand hier ein Abschlussbild, und mehrere Aufgaben,
+            die ausdrücklich zum Ausprobieren auffordern, waren damit tot –
+            der Editor war in dem Moment schon weg. */}
+        {finished && (
+          <section className="flex min-h-0 flex-col">
+            <div className="flex items-center justify-between border-b border-line bg-surface/40 px-3">
+              <div className="flex">
+                {(["editor", "shell"] as const).map((name) => (
+                  <button
+                    key={name}
+                    onClick={() => setTab(name)}
+                    className={`border-b-2 px-4 py-2.5 text-sm transition ${
+                      tab === name
+                        ? "border-neon text-ink"
+                        : "border-transparent text-ink-faint hover:text-ink-dim"
+                    }`}
+                  >
+                    {name === "editor" ? "Editor" : "Shell"}
+                  </button>
+                ))}
+              </div>
+              <PythonStatus
+                phase={python.phase}
+                text={python.statusText}
+                progress={python.progress}
+                onRestart={python.restart}
+              />
+            </div>
+
+            <div className="flex items-center gap-2 border-b border-line bg-neon/5 px-3 py-2 text-xs text-ink-dim">
+              <FlaskConical className="size-3.5 shrink-0 text-neon" />
+              Spielwiese: Der Code der Lektion steht noch hier. Probier ruhig Varianten aus –
+              geprüft wird nichts mehr.
+            </div>
+
+            <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,3fr)_minmax(0,2fr)]">
+              <div className="min-h-0 overflow-hidden border-b border-line">
+                {tab === "editor" ? (
+                  <div className="flex h-full flex-col">
+                    <div className="min-h-0 flex-1 overflow-auto">
+                      <CodeEditor value={code} onChange={setCode} onRun={runScratch} />
+                    </div>
+                    <div className="flex items-center justify-end border-t border-line bg-surface/40 px-3 py-2">
+                      <button
+                        onClick={runScratch}
+                        disabled={busy || !python.ready}
+                        className="flex items-center gap-1.5 rounded-lg bg-lime px-4 py-2 text-sm font-semibold text-void transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}
+                        Ausprobieren
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <PythonShell
+                    entries={shellEntries}
+                    onSubmit={runShell}
+                    onReset={() => {
+                      python.resetShell();
+                      setShellEntries([]);
+                    }}
+                    busy={busy}
+                    disabled={!python.ready}
+                  />
+                )}
+              </div>
+
+              <div className="min-h-0">
+                <OutputPanel result={result} busy={busy} />
+              </div>
+            </div>
+          </section>
         )}
       </div>
 

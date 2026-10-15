@@ -25,9 +25,9 @@ export const listen: Chapter = {
 for wort in woerter:
     print(wort)`,
           text: `
-Bisher hast du Schleifen über Strings laufen lassen – Zeichen für Zeichen. Jetzt kommt etwas viel Nützlicheres: die **Liste**.
+Bisher hast du Schleifen über Strings laufen lassen – Zeichen für Zeichen. Jetzt kommt etwas viel Nützlicheres: die **Liste**, englisch *list*.
 
-Eine Liste ist ein einzelner Wert, der beliebig viele andere Werte enthält. Du schreibst sie mit eckigen Klammern \`[ ]\` und trennst die Einträge mit Kommas. Führ das aus:
+Eine Liste ist ein einzelner Wert, der beliebig viele andere Werte enthält. Die einzelnen Werte darin heißen **Elemente** (*elements* oder *items*). Du schreibst eine Liste mit eckigen Klammern \`[ ]\` und trennst die Einträge mit Kommas. Führ das aus:
 
     woerter = ['Das', 'ist', 'eine', 'Liste']
 
@@ -456,15 +456,21 @@ Bisher hast du Listen immer komplett durchlaufen. Oft willst du aber genau **ein
           kind: "run",
           surface: "shell",
           expectsError: true,
-          program: `woerter[4]`,
+          // Die Liste gehört mit in die Shell: Sie wurde im Editor angelegt,
+          // und der hat seinen eigenen Namensraum. Ohne die erste Zeile kam
+          // hier ein `NameError` statt des gemeinten `IndexError` – und der
+          // Schritt galt trotzdem als gelöst, weil jeder Fehler zählt.
+          program: `woerter = ['Das', 'ist', 'eine', 'Liste']
+woerter[4]`,
           text: `
 Das ist die wichtigste Eigenart überhaupt: **Gezählt wird ab 0.** Das erste Element hat den Index \`0\`, das zweite \`1\`, und so weiter. Die Zahl in den Klammern heißt **Index**, den Vorgang nennt man *indizieren* oder *subscripting*.
 
-Eine Liste mit 4 Elementen hat also die gültigen Indizes 0, 1, 2 und 3. Was passiert bei 4? Probier es in der Shell:
+Eine Liste mit 4 Elementen hat also die gültigen Indizes 0, 1, 2 und 3. Was passiert bei 4? Probier es in der Shell – die Shell kennt die Liste aus dem Editor nicht, deshalb legst du sie hier noch einmal an:
 
+    woerter = ['Das', 'ist', 'eine', 'Liste']
     woerter[4]
 `,
-          task: "Führ `woerter[4]` in der Shell aus und lies den Fehler.",
+          task: "Leg `woerter` in der Shell an, führ `woerter[4]` aus und lies den Fehler.",
         },
         {
           id: "len-und-range",
@@ -554,10 +560,14 @@ Man kann ein \`range\` sogar indizieren. Was kommt hier heraus?
           kind: "run",
           surface: "shell",
           expectsError: true,
-          program: `indizes[4]`,
+          // Gleicher Grund wie bei `index-fehler`: Die Shell kennt `indizes`
+          // nicht, solange es nur im Editor stand.
+          program: `indizes = [0, 1, 2, 3]
+indizes[4]`,
           text: `
-Und was passiert hier?
+Und was passiert hier? Auch hier legst du die Liste in der Shell noch einmal an:
 
+    indizes = [0, 1, 2, 3]
     indizes[4]
 `,
           prediction: {

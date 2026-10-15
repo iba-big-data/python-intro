@@ -27,6 +27,18 @@ export type StepCommon = {
    * ganzes Programm verlangt, ist nicht so viel wert wie ein Dreizeiler.
    */
   xp?: number;
+  /**
+   * Den Editor mit dem Code des vorherigen Schritts füllen.
+   *
+   * Für Schritte, die ausdrücklich auf dem vorherigen Programm aufbauen
+   * („Häng die folgenden zwei Zeilen an“, „Ändere jetzt `begeistert` zu
+   * `False`“, „Der Code bleibt fast gleich“). Ohne das stand dort ein leeres
+   * Feld und die Aufgabe war nicht mehr nachvollziehbar – in Kapitel 12 war
+   * sie ohne Abtippen des Vorgängercodes gar nicht lösbar.
+   *
+   * Ein gesetztes `starter` hat Vorrang.
+   */
+  carryOver?: boolean;
 };
 
 /** Nur lesen, mit „Weiter“ bestätigen. */
@@ -191,10 +203,24 @@ const MINUTES_PER_KIND: Record<Step["kind"], number> = {
   exercise: 8,
 };
 
+/**
+ * Die Rohwerte oben lagen durchweg zu hoch.
+ *
+ * Eine Studentin hat jede Lektion gestoppt: 510 Minuten veranschlagt gegenüber
+ * 175 Minuten tatsächlich, also Faktor 2,9 – und das gleichmäßig über alle
+ * zwölf Kapitel. Eine zweite Rückmeldung bestätigt die Richtung für Kapitel 2.
+ *
+ * Trotzdem wird hier nicht durch 2,9 geteilt, sondern durch 1,5: beide
+ * Messungen stammen von schnellen Personen, und eine Schätzung, die niemand
+ * einhält, demotiviert in die andere Richtung. Der Wert ist bewusst
+ * konservativ und darf nachgezogen werden, wenn mehr Messungen vorliegen.
+ */
+const PACE_FACTOR = 1.5;
+
 export function lessonMinutes(lesson: Lesson): number {
   const raw = lesson.steps.reduce((sum, step) => sum + MINUTES_PER_KIND[step.kind], 0);
   // auf 5 Minuten runden – eine Schätzung soll nicht nach Stoppuhr aussehen
-  return Math.max(5, Math.round(raw / 5) * 5);
+  return Math.max(5, Math.round(raw / PACE_FACTOR / 5) * 5);
 }
 
 /** Vollständige Step-ID (eindeutig über alle Lektionen hinweg) */

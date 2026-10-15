@@ -31,6 +31,14 @@ export function OutputPanel({ result, busy }: { result: RunResult | null; busy: 
 
   return (
     <Frame>
+      {/* Übungen laufen gegen versteckte Testwerte. Ohne diese Zeile stand da
+          plötzlich „Python“, obwohl die Aufgabe eine ganz andere Liste zeigt. */}
+      {result.inputs && (
+        <p className="mb-2 font-sans text-xs text-ink-dim">
+          Gerechnet mit <span className="text-cyan">{result.inputs}</span>:
+        </p>
+      )}
+
       {result.output && (
         <pre className="whitespace-pre-wrap break-words text-ink">
           {result.output.replace(/\n+$/, "")}

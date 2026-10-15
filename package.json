@@ -18,7 +18,9 @@
     "content:check": "tsx scripts/export-content.ts && $(test -x .venv/bin/python && echo .venv/bin/python || echo python3) tools/verify_content.py"
   },
   "dependencies": {
+    "@codemirror/commands": "^6.10.4",
     "@codemirror/lang-python": "^6.1.6",
+    "@codemirror/language": "^6.12.4",
     "@codemirror/state": "^6.5.2",
     "@codemirror/view": "^6.36.4",
     "@electric-sql/pglite": "^0.5.5",

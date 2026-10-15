@@ -150,6 +150,7 @@ Und jetzt kommt das Schöne – das Training ist **eine einzige Zeile**:
         },
         {
           id: "vorhersage-einzeln",
+          carryOver: true,
           kind: "run",
           surface: "editor",
           program: `import pandas as pd
@@ -191,6 +192,7 @@ Damit kann es jetzt Vorhersagen treffen. Probier verschiedene Werte für \`neue_
         },
         {
           id: "vorhersagen-vergleichen",
+          carryOver: true,
           kind: "run",
           surface: "editor",
           program: `import pandas as pd

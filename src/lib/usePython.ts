@@ -22,6 +22,14 @@ export type RunResult = {
   passed: boolean;
   message: string | null;
   detail?: RunDetail;
+  /**
+   * Mit welchen Werten die gezeigte Ausgabe entstanden ist, z. B.
+   * `woerter = ['Python']`. Übungen laufen gegen versteckte Testfälle – ohne
+   * diese Angabe wirkte die Ausgabe zufällig („ist bisschen random, dass da
+   * jetzt ‚Python‘ ausgegeben wird, da man die hinterlegte Liste ja nicht
+   * kennt“).
+   */
+  inputs?: string;
 };
 
 export type PythonPhase = "boot" | "loading" | "packages" | "ready" | "running" | "error";
@@ -33,7 +41,7 @@ const HARD_TIMEOUT_MS = 30_000;
  * Bei jeder Änderung an pyodide-worker.js oder python_intro_runtime.py hochzählen.
  * Sonst bedienen Browser den alten Stand aus dem Cache weiter.
  */
-export const RUNTIME_VERSION = "4";
+export const RUNTIME_VERSION = "5";
 
 type Pending = {
   resolve: (result: RunResult) => void;
