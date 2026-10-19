@@ -168,7 +168,9 @@ Die Datei gehört neben die Zugangsdaten, nicht ins Repository.
 3. *Add new site → Import an existing project*, Repository wählen, Branch
    `main`. Next.js wird erkannt und das offizielle Netlify-Plugin automatisch
    eingerichtet. Build-Befehl `npm run build`, Base directory leer.
-4. Umgebungsvariable `NODE_VERSION` auf `20` (oder neuer) setzen.
+4. Umgebungsvariable `NODE_VERSION` auf `24` setzen — das ist die Version, mit
+   der der Build nachweislich durchläuft. Node 20 ist seit April 2026
+   End-of-Life.
 5. Die drei Variablen aus der Tabelle oben eintragen und als **Sensitive**
    markieren:
    - `DATABASE_URL` direkt aus dem Neon-Dashboard übernehmen,
