@@ -241,10 +241,13 @@ Mit `git push` wandert alles Versionierte mit, einschließlich `.gitignore` und
 Beim Wechsel **`SESSION_SECRET` und `ADMIN_PASSWORD` neu setzen** – damit
 verlieren auch ausgeschiedene Personen den Zugriff auf Teilnehmendendaten. Folge
 des neuen `SESSION_SECRET`: alle laufenden Studi-Sitzungen werden ungültig.
-Betroffene melden sich mit Kursname, Kurskennwort und **exakt demselben
-Anzeigenamen** neu an, um an ihren Fortschritt zu kommen; alternativ über den
-Wiederherstellungscode aus ihrem Profil. Bei laufendem Kurs vorher ankündigen
-und den Wechsel möglichst in die vorlesungsfreie Zeit legen.
+Betroffene kommen **allein über den Wiederherstellungscode** aus ihrem Profil
+wieder an ihren Fortschritt. Eine neue Anmeldung mit Kurskennwort und
+Anzeigename legt *immer* einen neuen, leeren Datensatz an – der Anzeigename
+identifiziert bewusst niemanden, sonst käme man mit fremden Namen in fremden
+Fortschritt. Bei laufendem Kurs vorher ankündigen und die Studierenden
+auffordern, ihren Wiederherstellungscode zu sichern; den Wechsel möglichst in
+die vorlesungsfreie Zeit legen.
 
 Das Fortschritts-Cookie hängt zudem am Hostnamen: Wer unter einer alten Adresse
 angefangen hat, startet unter einer neuen bei Null. Brücke ist allein der
