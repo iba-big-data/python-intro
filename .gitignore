@@ -9,6 +9,7 @@ build/
 !.env.example
 
 .vercel
+.netlify
 *.tsbuildinfo
 next-env.d.ts
 tools/extracted/

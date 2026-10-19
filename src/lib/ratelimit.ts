@@ -44,11 +44,14 @@ export function reset(key: string): void {
 }
 
 /**
- * Absender einer Anfrage, so gut es hinter einem Proxy geht. Vercel setzt
- * `x-forwarded-for`; fehlt der Kopf, landen alle im selben Topf – dann bremst
+ * Absender einer Anfrage, so gut es hinter einem Proxy geht. Netlify setzt
+ * `x-nf-client-connection-ip` mit genau einer Adresse, andere Hoster nur
+ * `x-forwarded-for`. Fehlen beide, landen alle im selben Topf – dann bremst
  * die Sperre grob, aber sie bremst.
  */
 export function clientKey(request: Request): string {
+  const direct = request.headers.get("x-nf-client-connection-ip");
+  if (direct) return direct.trim();
   const forwarded = request.headers.get("x-forwarded-for");
   return forwarded?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unbekannt";
 }

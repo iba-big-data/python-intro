@@ -28,7 +28,7 @@ function create(): Database {
     if (process.env.NODE_ENV === "production") {
       throw new Error(
         "DATABASE_URL fehlt. Im Produktivbetrieb wird eine echte Postgres-Datenbank benötigt " +
-          "(siehe README, Abschnitt „Deployment auf Vercel“).",
+          "(siehe README, Abschnitt „Betrieb: Konten, Hosting, Datenbank“).",
       );
     }
 
