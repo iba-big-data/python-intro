@@ -108,6 +108,12 @@ Aufgabenteilung:
 | Netlify | baut die Seite und betreibt sie       | kostenloses Kontingent reicht für Kursgrößen |
 | Neon    | Postgres-Datenbank im Betrieb         | kostenloses Kontingent reicht für Kursgrößen |
 
+> **Diese Installation:** Kursseite <https://python-intro-iba.netlify.app>,
+> Code in `github.com/iba-big-data/python-intro`, Hosting im Netlify-Team
+> „IBA“, Datenbank bei Neon in Frankfurt. Alle drei Konten laufen auf das
+> Funktionspostfach des Instituts; die Zugangsdaten liegen im
+> Passwortmanager, nicht hier.
+
 **Grundregel für die Konten:** Alle drei laufen auf einer **Funktionsadresse des
 Instituts** (z. B. `python-intro@uni-ulm.de`), nicht auf eine Person, und
 mindestens zwei Personen haben Vollzugriff. Sonst verschwindet mit einem
