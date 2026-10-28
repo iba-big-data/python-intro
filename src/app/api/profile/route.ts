@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { students } from "@/lib/db/schema";
 import { getStudentSession, setStudentSession, slugify } from "@/lib/auth";
 import { AVATARS } from "@/lib/avatars";
+import { nicknameTaken } from "@/lib/courses";
 
 /** Avatar und Anzeigename ändern – beides rein kosmetisch. */
 export async function POST(request: Request) {
@@ -46,6 +47,12 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Bitte wähle einen Namen mit Buchstaben oder Zahlen." },
         { status: 400 },
+      );
+    }
+    if (await nicknameTaken(session.courseId, nicknameKey, session.studentId)) {
+      return NextResponse.json(
+        { error: "Diesen Namen gibt es in deinem Kurs schon. Bitte wähle einen anderen." },
+        { status: 409 },
       );
     }
     values.nickname = nickname;

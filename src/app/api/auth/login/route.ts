@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { courses, students } from "@/lib/db/schema";
 import {
   generateRecoveryCode,
+  getStudentSession,
   normaliseRecoveryCode,
   setStudentSession,
   slugify,
 } from "@/lib/auth";
-import { findCourseByPassword } from "@/lib/courses";
+import { findCourseByPassword, nicknameTaken } from "@/lib/courses";
 import { AVATARS } from "@/lib/avatars";
 import { clientKey, hit, reset } from "@/lib/ratelimit";
 
@@ -77,9 +78,11 @@ type Attempt =
     };
 
 /**
- * Anmeldung mit Kurskennwort. Legt *immer* einen neuen Datensatz an – der
- * Anzeigename ist nur Schmuck fürs Profil und darf niemanden wiedererkennen,
- * sonst käme man mit fremden Namen in fremden Fortschritt.
+ * Anmeldung mit Kurskennwort. Der Anzeigename allein erkennt niemanden wieder,
+ * sonst käme man mit fremden Namen in fremden Fortschritt. Wiedererkannt wird
+ * nur, wer noch das Cookie des Kurses im Browser hat – alle anderen bekommen
+ * einen neuen Datensatz, aber nur unter einem Namen, den es im Kurs noch nicht
+ * gibt. So landet niemand versehentlich in einem zweiten, leeren Konto.
  */
 async function joinWithPassword(password: string, rawNickname: string): Promise<Attempt> {
   const nickname = rawNickname.trim();
@@ -99,6 +102,30 @@ async function joinWithPassword(password: string, rawNickname: string): Promise<
   const course = await findCourseByPassword(password);
   if (!course) {
     return { error: "Dieses Kurskennwort kennen wir nicht.", status: 401 };
+  }
+
+  // Schon angemeldet (Cookie gültig) und nur erneut über das Formular
+  // gekommen, etwa über ein Lesezeichen auf /login: weiter im eigenen Stand,
+  // statt das Cookie durch ein neues, leeres Konto zu ersetzen.
+  const session = await getStudentSession();
+  if (session?.courseId === course.id) {
+    const [current] = await db
+      .select()
+      .from(students)
+      .where(and(eq(students.id, session.studentId), eq(students.courseId, course.id)))
+      .limit(1);
+    if (current) {
+      await db.update(students).set({ lastActiveAt: new Date() }).where(eq(students.id, current.id));
+      return { student: current, courseName: course.name, resumed: true };
+    }
+  }
+
+  if (await nicknameTaken(course.id, nicknameKey)) {
+    return {
+      error:
+        "Diesen Namen gibt es in deinem Kurs schon. Warst du schon einmal dabei? Dann melde dich mit deinem Wiederherstellungscode an – sonst wähle bitte einen anderen Namen.",
+      status: 409,
+    };
   }
 
   const [student] = await db

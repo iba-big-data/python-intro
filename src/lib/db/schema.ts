@@ -58,7 +58,7 @@ export const students = pgTable(
     courseId: uuid("course_id")
       .notNull()
       .references(() => courses.id, { onDelete: "cascade" }),
-    /** frei gewählter Anzeigename – rein kosmetisch, darf doppelt vorkommen */
+    /** frei gewählter Anzeigename – rein kosmetisch, je Kurs eindeutig (prüft die Anwendung) */
     nickname: text("nickname").notNull(),
     nicknameKey: text("nickname_key").notNull(),
     avatar: text("avatar").notNull().default("🚀"),
@@ -79,8 +79,9 @@ export const students = pgTable(
     lastActiveAt: timestamp("last_active_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    // Kein Unique-Index auf dem Namen: die Anmeldung erkennt niemanden mehr am
-    // Namen wieder, also dürfen zwei Personen im selben Kurs "Alex" heißen.
+    // Kein Unique-Index auf dem Namen: Bestehende Kurse können schon Dubletten
+    // enthalten, an denen eine Migration scheitern würde. Neue Dubletten
+    // verhindert nicknameTaken() bei Anmeldung und Umbenennung.
     index("students_course_nickname_idx").on(t.courseId, t.nicknameKey),
     index("students_course_idx").on(t.courseId),
     uniqueIndex("students_recovery_code_idx").on(t.recoveryCode),

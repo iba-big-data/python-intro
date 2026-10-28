@@ -248,10 +248,11 @@ Beim Wechsel **`SESSION_SECRET` und `ADMIN_PASSWORD` neu setzen** – damit
 verlieren auch ausgeschiedene Personen den Zugriff auf Teilnehmendendaten. Folge
 des neuen `SESSION_SECRET`: alle laufenden Studi-Sitzungen werden ungültig.
 Betroffene kommen **allein über den Wiederherstellungscode** aus ihrem Profil
-wieder an ihren Fortschritt. Eine neue Anmeldung mit Kurskennwort und
-Anzeigename legt *immer* einen neuen, leeren Datensatz an – der Anzeigename
-identifiziert bewusst niemanden, sonst käme man mit fremden Namen in fremden
-Fortschritt. Bei laufendem Kurs vorher ankündigen und die Studierenden
+wieder an ihren Fortschritt. Der Anzeigename identifiziert bewusst niemanden,
+sonst käme man mit fremden Namen in fremden Fortschritt. Weil er je Kurs
+eindeutig ist, weist die Anmeldung einen schon vorhandenen Namen ab und
+verweist auf den Wiederherstellungscode – ein zweites, leeres Konto entsteht so
+nicht versehentlich. Bei laufendem Kurs vorher ankündigen und die Studierenden
 auffordern, ihren Wiederherstellungscode zu sichern; den Wechsel möglichst in
 die vorlesungsfreie Zeit legen.
 

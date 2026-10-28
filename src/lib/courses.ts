@@ -51,6 +51,20 @@ export async function findCourseByPassword(
   return null;
 }
 
+/** Gibt es den (normalisierten) Namen im Kurs schon – außer bei `exceptId`? */
+export async function nicknameTaken(
+  courseId: string,
+  nicknameKey: string,
+  exceptId?: string,
+): Promise<boolean> {
+  const rows = await db
+    .select({ id: students.id })
+    .from(students)
+    .where(and(eq(students.courseId, courseId), eq(students.nicknameKey, nicknameKey)))
+    .limit(2);
+  return rows.some((row) => row.id !== exceptId);
+}
+
 export type CourseChapter = Chapter & { lessons: Lesson[] };
 
 /**
